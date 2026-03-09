@@ -10,16 +10,16 @@ export class UserController {
 
   @Get('profile')
   async getProfile(@Request() req) {
-    return this.userService.getProfile(req.user.id);
+    return this.userService.getProfile(String(req.user.id));
   }
 
   @Get('stats')
   async getStats(@Request() req) {
-    return this.userService.getStats(req.user.id);
+    return this.userService.getStats(String(req.user.id));
   }
 
   @Put('skin')
   async updateSkin(@Request() req, @Body() dto: UpdateSkinDto) {
-    return this.userService.updateSkin(req.user.id, dto.skinId);
+    return this.userService.updateSkin(String(req.user.id), dto.skinId);
   }
 }

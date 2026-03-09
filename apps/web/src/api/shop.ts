@@ -39,6 +39,7 @@ export const shopApi = {
         return response.data;
       },
       () => mockBackend.getShopItems(type as 'default' | 'premium'),
+      'extended',
     ),
 
   buyItem: async (itemId: string, shopType?: string): Promise<BuyItemResponse> =>
@@ -48,5 +49,6 @@ export const shopApi = {
         return response.data;
       },
       () => mockBackend.buyShopItem(itemId, (shopType as 'default' | 'premium') || 'default'),
+      'extended',
     ),
 };

@@ -42,7 +42,7 @@ export class GameActionResponseDto {
 
 export class GameStateResponseDto {
   user: {
-    id: number;
+    id: string;
     level: number;
     xp: number;
     bloodBalance: number;

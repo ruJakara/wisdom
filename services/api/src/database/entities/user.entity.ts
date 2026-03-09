@@ -21,7 +21,7 @@ import { Referral } from './referral.entity';
 @Index(['referral_code'])
 export class User {
   @PrimaryColumn('bigint')
-  id: number;
+  id: string;
 
   @Column({ type: 'varchar', length: 255, nullable: true })
   username: string | null;
@@ -72,7 +72,7 @@ export class User {
   referral_code: string | null;
 
   @Column({ type: 'bigint', nullable: true })
-  referred_by: number | null;
+  referred_by: string | null;
 
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   last_login: Date;

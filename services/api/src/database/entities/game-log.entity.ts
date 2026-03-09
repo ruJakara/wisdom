@@ -18,7 +18,7 @@ export class GameLog {
   id: number;
 
   @Column({ type: 'bigint' })
-  user_id: number;
+  user_id: string;
 
   @Column({ type: 'varchar', length: 50 })
   enemy_type: string;

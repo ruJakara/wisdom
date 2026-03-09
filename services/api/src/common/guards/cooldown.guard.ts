@@ -5,8 +5,6 @@ import {
   ServiceUnavailableException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { RedisService } from '@nestjs/redis';
-import { Redis } from 'ioredis';
 
 export const COOLDOWN_KEY = 'cooldown';
 
@@ -18,11 +16,9 @@ export interface CooldownOptions {
 
 @Injectable()
 export class CooldownGuard implements CanActivate {
-  private redis: Redis;
+  private readonly cooldownCache = new Map<string, number>();
 
-  constructor(private reflector: Reflector, private redisService: RedisService) {
-    this.redis = this.redisService.client();
-  }
+  constructor(private readonly reflector: Reflector) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const cooldown = this.reflector.get<CooldownOptions>(
@@ -42,17 +38,18 @@ export class CooldownGuard implements CanActivate {
     }
 
     const cooldownKey = `cooldown:${userId}:${cooldown.key}`;
-    const cooldownActive = await this.redis.get(cooldownKey);
+    const now = Date.now();
+    const expiresAt = this.cooldownCache.get(cooldownKey) || 0;
+    const remainingMs = expiresAt - now;
 
-    if (cooldownActive) {
-      const remaining = await this.redis.ttl(cooldownKey);
+    if (remainingMs > 0) {
+      const remainingSec = Math.ceil(remainingMs / 1000);
       throw new ServiceUnavailableException(
-        cooldown.message || `Слишком часто. Попробуйте через ${remaining} сек.`,
+        cooldown.message || `Слишком часто. Попробуйте через ${remainingSec} сек.`,
       );
     }
 
-    // Устанавливаем cooldown
-    await this.redis.setex(cooldownKey, cooldown.ttl, '1');
+    this.cooldownCache.set(cooldownKey, now + cooldown.ttl * 1000);
 
     return true;
   }

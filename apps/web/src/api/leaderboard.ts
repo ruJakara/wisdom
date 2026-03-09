@@ -39,6 +39,7 @@ export const leaderboardApi = {
         return response.data;
       },
       () => mockBackend.getLeaderboard(limit, offset, filter),
+      'extended',
     ),
 
   getMyPosition: async (): Promise<PlayerPosition> =>
@@ -48,5 +49,6 @@ export const leaderboardApi = {
         return response.data;
       },
       () => mockBackend.getMyPosition(),
+      'extended',
     ),
 };

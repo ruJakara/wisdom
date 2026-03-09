@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { User } from '../database/entities';
+import { User } from '../../database/entities';
 import { LevelService } from './level.service';
 
 export interface AddXpResult {
@@ -12,6 +12,8 @@ export interface AddXpResult {
   statPointsAwarded: number;
 }
 
+type UserId = string;
+
 @Injectable()
 export class UserService {
   constructor(
@@ -20,8 +22,12 @@ export class UserService {
     private readonly levelService: LevelService,
   ) {}
 
-  async findById(id: number): Promise<User | null> {
-    return this.userRepository.findOne({ where: { id } });
+  private normalizeId(id: string | number): UserId {
+    return String(id);
+  }
+
+  async findById(id: string | number): Promise<User | null> {
+    return this.userRepository.findOne({ where: { id: this.normalizeId(id) } });
   }
 
   async create(userData: Partial<User>): Promise<User> {
@@ -29,19 +35,21 @@ export class UserService {
     return this.userRepository.save(user);
   }
 
-  async update(id: number, updates: Partial<User>): Promise<User> {
-    const user = await this.findById(id);
+  async update(id: string | number, updates: Partial<User>): Promise<User> {
+    const normalizedId = this.normalizeId(id);
+    const user = await this.findById(normalizedId);
     if (!user) {
-      throw new NotFoundException(`User with ID ${id} not found`);
+      throw new NotFoundException(`User with ID ${normalizedId} not found`);
     }
-    await this.userRepository.update(id, updates);
-    return this.userRepository.findOne({ where: { id } });
+    await this.userRepository.update({ id: normalizedId }, updates);
+    return (await this.userRepository.findOne({ where: { id: normalizedId } })) as User;
   }
 
-  async getProfile(userId: number) {
-    const user = await this.findById(userId);
+  async getProfile(userId: string | number) {
+    const normalizedId = this.normalizeId(userId);
+    const user = await this.findById(normalizedId);
     if (!user) {
-      throw new NotFoundException(`User with ID ${userId} not found`);
+      throw new NotFoundException(`User with ID ${normalizedId} not found`);
     }
 
     return {
@@ -61,10 +69,11 @@ export class UserService {
     };
   }
 
-  async getStats(userId: number) {
-    const user = await this.findById(userId);
+  async getStats(userId: string | number) {
+    const normalizedId = this.normalizeId(userId);
+    const user = await this.findById(normalizedId);
     if (!user) {
-      throw new NotFoundException(`User with ID ${userId} not found`);
+      throw new NotFoundException(`User with ID ${normalizedId} not found`);
     }
 
     return {
@@ -77,10 +86,11 @@ export class UserService {
     };
   }
 
-  async updateSkin(userId: number, skinId: string) {
-    const user = await this.findById(userId);
+  async updateSkin(userId: string | number, skinId: string) {
+    const normalizedId = this.normalizeId(userId);
+    const user = await this.findById(normalizedId);
     if (!user) {
-      throw new NotFoundException(`User with ID ${userId} not found`);
+      throw new NotFoundException(`User with ID ${normalizedId} not found`);
     }
 
     user.skin_id = skinId;
@@ -92,10 +102,11 @@ export class UserService {
   /**
    * Добавить XP и проверить повышение уровня
    */
-  async addXp(userId: number, xpAmount: number): Promise<AddXpResult> {
-    const user = await this.findById(userId);
+  async addXp(userId: string | number, xpAmount: number): Promise<AddXpResult> {
+    const normalizedId = this.normalizeId(userId);
+    const user = await this.findById(normalizedId);
     if (!user) {
-      throw new NotFoundException(`User with ID ${userId} not found`);
+      throw new NotFoundException(`User with ID ${normalizedId} not found`);
     }
 
     // Добавляем XP
@@ -133,10 +144,11 @@ export class UserService {
   /**
    * Получить информацию о прогрессе уровня
    */
-  async getLevelProgress(userId: number) {
-    const user = await this.findById(userId);
+  async getLevelProgress(userId: string | number) {
+    const normalizedId = this.normalizeId(userId);
+    const user = await this.findById(normalizedId);
     if (!user) {
-      throw new NotFoundException(`User with ID ${userId} not found`);
+      throw new NotFoundException(`User with ID ${normalizedId} not found`);
     }
 
     return this.levelService.getLevelInfo(user.xp, user.level);

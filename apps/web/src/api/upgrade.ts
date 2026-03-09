@@ -30,6 +30,7 @@ export const upgradeApi = {
         return response.data;
       },
       () => mockBackend.getUpgradeOptions(),
+      'extended',
     ),
 
   buyUpgrade: async (stat: 'strength' | 'agility' | 'hp'): Promise<BuyUpgradeResponse> =>
@@ -39,5 +40,6 @@ export const upgradeApi = {
         return response.data;
       },
       () => mockBackend.buyUpgrade(stat),
+      'extended',
     ),
 };

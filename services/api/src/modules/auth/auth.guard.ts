@@ -4,7 +4,9 @@ import { Request } from 'express';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
-  constructor(private readonly jwtService: JwtService) {}
+  private readonly jwtService = new JwtService({
+    secret: process.env.JWT_SECRET,
+  });
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<Request>();
@@ -16,6 +18,9 @@ export class AuthGuard implements CanActivate {
 
     try {
       const payload = await this.jwtService.verifyAsync(token);
+      if (payload?.id !== undefined && payload?.id !== null) {
+        payload.id = String(payload.id);
+      }
       request['user'] = payload;
     } catch {
       return false;

@@ -1,11 +1,11 @@
 # STATUS
 
-Обновлено: 2026-03-09
+Обновлено: 2026-03-10
 
-## Текущее состояние (Stage 1 baseline)
+## Текущее состояние (Stage 3 in progress)
 
-- Рабочая конфигурация: `bot-only` + восстановленные экраны WebApp (Stage 1) с mock API.
-- Backend `services/api` сейчас нестабилен и не собирается.
+- Рабочая конфигурация: `bot-only` + восстановленные экраны WebApp (Stage 1) + начатая Stage 3 интеграция.
+- Backend `services/api` (MVP core) собирается после стабилизации этапа 2.
 - Единый рекомендуемый путь локального запуска: `run-bot-only.bat`.
 
 ## Что работает
@@ -18,17 +18,26 @@
   - `npm run build --prefix apps/web` -> OK (проверено 2026-03-09).
 - Восстановлен роутинг экранов:
   - `Hub/Hunt/Upgrade/Inventory/Shop/Leaderboard/Referral`.
-- Для фронта включён временный mock API режим:
-  - `VITE_USE_MOCK_API=true` в `.env`.
+- Фронтенд переведён на split-режим API:
+  - core (`auth/user/game`) -> live backend MVP (`VITE_USE_MOCK_CORE_API=false`)
+  - extended (`upgrade/inventory/shop/leaderboard/referral`) -> mock (`VITE_USE_MOCK_EXTENDED_API=true`)
+- `services/api` собирается:
+  - `npm run build --prefix services/api` -> OK (проверено 2026-03-09).
+- В backend оставлен минимальный контур модулей:
+  - `auth`
+  - `user`
+  - `game`
+- Проверен базовый runtime-цикл backend MVP:
+  - `auth -> game/hunt -> game/action -> game/state` -> OK (проверено 2026-03-09, локальный smoke).
 - Бот-код проходит синтаксическую проверку:
   - `python -m compileall apps\bot\src` -> OK (проверено 2026-03-09).
 
 ## Что сломано
 
-- `services/api` не собирается:
-  - `npm run build --prefix services/api` -> FAIL (88 TypeScript ошибок, проверено 2026-03-09).
-- Реальный backend-контур для фронта пока не подключён:
-  - frontend работает через mock-ответы до стабилизации `services/api`.
+- Полный backend-контур для расширенных экранов пока не подключён:
+  - `upgrade`, `inventory`, `shop`, `leaderboard`, `referral` продолжают идти через mock.
+- Временное ограничение этапа 2:
+  - второстепенные backend-модули (`payment`, `notification`, `referral`, `shop`, `inventory`, `upgrade`, `leaderboard`) отключены из основного контура до этапа 3-4.
 
 ## Где смотреть логи
 

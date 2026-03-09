@@ -15,7 +15,7 @@ import {
   GameActionResponseDto,
   GameStateResponseDto,
 } from './dto/game-action.dto';
-import { GAME_CONFIG } from '@packages/shared/constants';
+import { GAME_CONFIG } from '../../config/game.constants';
 import { UserService } from '../user/user.service';
 
 interface HuntSession {
@@ -33,7 +33,7 @@ interface HuntSession {
 @Injectable()
 export class GameService {
   // Временное хранилище сессий охоты (в production заменить на Redis)
-  private huntSessions: Map<number, HuntSession> = new Map();
+  private huntSessions: Map<string, HuntSession> = new Map();
 
   constructor(
     @InjectRepository(User)
@@ -48,7 +48,7 @@ export class GameService {
   /**
    * Начало охоты
    */
-  async startHunt(userId: number): Promise<StartHuntResponseDto> {
+  async startHunt(userId: string): Promise<StartHuntResponseDto> {
     // Проверка существующей охоты
     if (this.huntSessions.has(userId)) {
       throw new ConflictException('Охота уже активна');
@@ -85,7 +85,7 @@ export class GameService {
    * Выполнение действия в бою
    */
   async performAction(
-    userId: number,
+    userId: string,
     dto: GameActionDto,
   ): Promise<GameActionResponseDto> {
     const session = this.huntSessions.get(userId);
@@ -137,7 +137,7 @@ export class GameService {
    * Обработка атаки
    */
   private async handleAttack(
-    userId: number,
+    userId: string,
     user: User,
     session: HuntSession,
   ): Promise<GameActionResponseDto> {
@@ -198,7 +198,7 @@ export class GameService {
    * Обработка побега
    */
   private async handleEscape(
-    userId: number,
+    userId: string,
     user: User,
     session: HuntSession,
   ): Promise<GameActionResponseDto> {
@@ -245,7 +245,7 @@ export class GameService {
    * Обработка поглощения
    */
   private async handleFeed(
-    userId: number,
+    userId: string,
     user: User,
     session: HuntSession,
   ): Promise<GameActionResponseDto> {
@@ -286,7 +286,7 @@ export class GameService {
   /**
    * Получение состояния игры
    */
-  async getGameState(userId: number): Promise<GameStateResponseDto> {
+  async getGameState(userId: string): Promise<GameStateResponseDto> {
     const user = await this.userRepository.findOne({ where: { id: userId } });
     if (!user) {
       throw new NotFoundException(`Пользователь ${userId} не найден`);
@@ -315,7 +315,7 @@ export class GameService {
   /**
    * Воскрешение
    */
-  async respawn(userId: number): Promise<{ success: boolean; message: string }> {
+  async respawn(userId: string): Promise<{ success: boolean; message: string }> {
     const user = await this.userRepository.findOne({ where: { id: userId } });
     if (!user) {
       throw new NotFoundException(`Пользователь ${userId} не найден`);
@@ -339,7 +339,7 @@ export class GameService {
    * Логирование игрового действия
    */
   private async logGameAction(
-    userId: number,
+    userId: string,
     enemy: HuntSession['enemy'],
     action: string,
     success: boolean,

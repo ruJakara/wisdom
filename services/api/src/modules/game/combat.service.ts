@@ -1,9 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import {
-  calculateDamage,
-  calculateEscapeChance,
-  calculateFeedAmount,
-} from '@packages/game-core/formulas';
+import { GAME_CONFIG } from '../../config/game.constants';
 
 @Injectable()
 export class CombatService {
@@ -11,21 +7,27 @@ export class CombatService {
    * Расчет урона игрока
    */
   calcDamage(strength: number, enemyArmor: number = 0): number {
-    return calculateDamage(strength, enemyArmor);
+    const damage = strength * 1.5 - enemyArmor;
+    return Math.max(GAME_CONFIG.MIN_DAMAGE, Math.floor(damage));
   }
 
   /**
    * Расчет шанса побега
    */
   calcEscapeChance(userAgility: number, enemyAgility: number): number {
-    return calculateEscapeChance(userAgility, enemyAgility);
+    const rawChance = (userAgility / Math.max(1, enemyAgility)) * 100;
+    return Math.min(
+      GAME_CONFIG.MAX_ESCAPE_CHANCE,
+      Math.max(GAME_CONFIG.MIN_ESCAPE_CHANCE, Math.floor(rawChance)),
+    );
   }
 
   /**
    * Расчет количества исцеления при поглощении
    */
   calcFeedAmount(victimLevel: number): number {
-    return calculateFeedAmount(victimLevel);
+    const baseHeal = 10;
+    return baseHeal * Math.max(1, victimLevel);
   }
 
   /**

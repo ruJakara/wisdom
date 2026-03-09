@@ -9,8 +9,9 @@
     "target": "ES2021",
     "sourceMap": true,
     "outDir": "./dist",
+    "rootDir": "./src",
     "baseUrl": "./",
-    "incremental": true,
+    "incremental": false,
     "skipLibCheck": true,
     "strictNullChecks": true,
     "noImplicitAny": false,
@@ -25,5 +26,20 @@
       "@packages/shared/*": ["../../packages/shared/*"],
       "@packages/game-core/*": ["../../packages/game-core/*"]
     }
-  }
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "test",
+    "src/database/migrations/**",
+    "src/database/seeds/**",
+    "src/modules/inventory/**",
+    "src/modules/leaderboard/**",
+    "src/modules/notification/**",
+    "src/modules/payment/**",
+    "src/modules/referral/**",
+    "src/modules/shop/**",
+    "src/modules/upgrade/**"
+  ]
 }

@@ -45,6 +45,7 @@ export const inventoryApi = {
         return response.data;
       },
       () => mockBackend.getInventory(),
+      'extended',
     ),
 
   useItem: async (itemId: string): Promise<UseItemResponse> =>
@@ -54,6 +55,7 @@ export const inventoryApi = {
         return response.data;
       },
       () => mockBackend.useItem(itemId),
+      'extended',
     ),
 
   sellItem: async (itemId: string, quantity: number = 1): Promise<SellItemResponse> =>
@@ -63,5 +65,6 @@ export const inventoryApi = {
         return response.data;
       },
       () => mockBackend.sellItem(itemId, quantity),
+      'extended',
     ),
 };

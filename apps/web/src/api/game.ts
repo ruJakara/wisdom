@@ -61,6 +61,7 @@ export const gameApi = {
         return response.data;
       },
       () => mockBackend.startHunt(),
+      'core',
     ),
 
   performAction: async (action: GameActionType): Promise<GameActionResponse> =>
@@ -70,6 +71,7 @@ export const gameApi = {
         return response.data;
       },
       () => mockBackend.performAction(action),
+      'core',
     ),
 
   getGameState: async (): Promise<GameState> =>
@@ -79,6 +81,7 @@ export const gameApi = {
         return response.data;
       },
       () => mockBackend.getGameState(),
+      'core',
     ),
 
   respawn: async (): Promise<RespawnResponse> =>
@@ -88,5 +91,6 @@ export const gameApi = {
         return response.data;
       },
       () => mockBackend.respawn(),
+      'core',
     ),
 };

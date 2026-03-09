@@ -43,6 +43,7 @@ export const userApi = {
         return response.data;
       },
       () => mockBackend.getProfile(),
+      'core',
     ),
 
   getStats: async (): Promise<UserStats> =>
@@ -52,6 +53,7 @@ export const userApi = {
         return response.data;
       },
       () => mockBackend.getStats(),
+      'core',
     ),
 
   updateSkin: async (skinId: string): Promise<UpdateSkinResponse> =>
@@ -64,5 +66,6 @@ export const userApi = {
         success: true,
         skinId,
       }),
+      'core',
     ),
 };

@@ -27,6 +27,7 @@ export const authApi = {
         return response.data;
       },
       () => mockBackend.validateInitData(initData),
+      'core',
     );
   },
 
@@ -39,6 +40,7 @@ export const authApi = {
         return response.data;
       },
       () => mockBackend.refreshToken(),
+      'core',
     );
   },
 
@@ -57,5 +59,6 @@ export const authApi = {
           lastName: profile.lastName,
         };
       },
+      'core',
     ),
 };

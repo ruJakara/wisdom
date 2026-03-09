@@ -26,3 +26,17 @@ TODO / next agent suggestions:
 - Add explicit UI entry points to Leaderboard/Referral from bottom nav (currently available from Hub/menu and direct routes).
 - For Stage 2+, switch each API module from mock-first to real API-first behind a feature flag.
 - Updated project docs for Stage 1 baseline (README/STATUS/QUICKSTART) and marked Stage 1 checklist items done in DEVELOPMENT_PLAN.
+- Stage 2 backend stabilization: services/api now builds in MVP core mode (auth/user/game); secondary modules temporarily excluded from compile/runtime path.
+- Replaced Redis-based cooldown guard with in-memory guard for MVP, removed Bull/Redis module dependencies from AppModule, and switched throttling to in-memory Throttler config.
+- Updated API tsconfig include/exclude to focus on core modules during recovery; fixed broken import paths in user/game modules and compile blocker in seeds.
+- Completed Stage 2 checklist item for ID consistency: unified bigint identifiers to string in core entities (User.id and related FK fields) and aligned auth/user/game flows to string IDs.
+- Fixed runtime blockers found during Stage 2 smoke:
+  - removed migration loading from runtime TypeORM config to avoid TS/ESM migration import failures during `nest start`;
+  - made AuthGuard self-contained (no JwtService DI dependency) so User/Game controller guards resolve correctly in MVP module layout.
+- Added root env fallback for API config loading (`services/api/.env` + repo root `.env`) for local run consistency.
+- End-to-end Stage 2 smoke passed locally (2026-03-09): `auth -> game/hunt -> game/action -> game/state`.
+- Started Stage 3 integration (2026-03-10):
+  - Added scoped mock strategy in frontend API layer (`withMockApi(..., scope)`).
+  - Switched core modules (`auth/user/game`) to `scope='core'` and live backend by default.
+  - Kept extended modules (`upgrade/inventory/shop/leaderboard/referral`) on `scope='extended'` mock by default.
+  - Updated `.env.example`, `README.md`, `QUICKSTART.md`, `STATUS.md`, `DEVELOPMENT_PLAN.md` to reflect split-mode API integration.

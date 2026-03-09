@@ -1,13 +1,12 @@
 import { Injectable } from '@nestjs/common';
-import { ENEMY_TYPES } from '@packages/shared/constants';
-import { Enemy } from '@packages/shared/types';
+import { ENEMY_TYPES, EnemyState } from '../../config/game.constants';
 
 @Injectable()
 export class HuntService {
   /**
    * Генерация случайного врага на основе уровня игрока
    */
-  findEnemy(userLevel: number): Enemy {
+  findEnemy(userLevel: number): EnemyState {
     // Определяем доступные типы врагов на основе уровня игрока
     const availableEnemies = ENEMY_TYPES.filter((enemy) => {
       // Базовая логика: волки доступны с 1 уровня, охотники с 3, ведьмы с 5 и т.д.
@@ -62,7 +61,7 @@ export class HuntService {
    * Расчет статов врага на основе уровня
    * Формула: base * (1.1 ^ (level - 1))
    */
-  private calculateEnemyStats(enemyType: (typeof ENEMY_TYPES)[0], level: number) {
+  private calculateEnemyStats(enemyType: (typeof ENEMY_TYPES)[number], level: number) {
     const hpMultiplier = Math.pow(1.1, level - 1);
     const damageMultiplier = Math.pow(1.05, level - 1);
 

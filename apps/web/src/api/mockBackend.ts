@@ -78,6 +78,7 @@ interface MockState {
 const MOCK_LATENCY_MS = 100;
 const ENABLED_VALUES = new Set(['1', 'true', 'yes', 'on']);
 const DISABLED_VALUES = new Set(['0', 'false', 'no', 'off']);
+type MockScope = 'all' | 'core' | 'extended';
 
 const ENEMY_POOL = [
   { type: 'wolf', baseHp: 50, baseDamage: 6, baseXp: 45, baseBlood: 30 },
@@ -262,11 +263,26 @@ export function isMockApiEnabled(): boolean {
   return true;
 }
 
+function getScopedMockFlag(scope: MockScope): boolean {
+  if (scope === 'all') {
+    return isMockApiEnabled();
+  }
+
+  const scopedFlagName = scope === 'core' ? 'VITE_USE_MOCK_CORE_API' : 'VITE_USE_MOCK_EXTENDED_API';
+  const scopedValue = String(import.meta.env[scopedFlagName] ?? '').trim().toLowerCase();
+
+  if (ENABLED_VALUES.has(scopedValue)) return true;
+  if (DISABLED_VALUES.has(scopedValue)) return false;
+
+  return isMockApiEnabled();
+}
+
 export async function withMockApi<T>(
   realCall: () => Promise<T>,
   mockCall: () => Promise<T>,
+  scope: MockScope = 'all',
 ): Promise<T> {
-  if (isMockApiEnabled()) {
+  if (getScopedMockFlag(scope)) {
     return mockCall();
   }
   return realCall();

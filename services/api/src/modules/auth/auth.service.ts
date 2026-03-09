@@ -13,9 +13,10 @@ export class AuthService {
   ) {}
 
   async validateInitData(data: { initData: string }) {
+    const botToken = this.configService.get<string>('TELEGRAM_BOT_TOKEN') || '';
     const isValid = this.validateTelegramInitData(
       data.initData,
-      this.configService.get('TELEGRAM_BOT_TOKEN'),
+      botToken,
     );
 
     if (!isValid) {
@@ -30,9 +31,10 @@ export class AuthService {
     }
 
     const telegramUser = JSON.parse(userStr);
+    const telegramUserId = String(telegramUser.id);
 
     // Check if user exists, if not - create new user
-    let user = await this.userService.findById(telegramUser.id);
+    let user = await this.userService.findById(telegramUserId);
 
     if (!user) {
       // Generate unique referral code
@@ -40,7 +42,7 @@ export class AuthService {
 
       // Create new user
       user = await this.userService.create({
-        id: telegramUser.id,
+        id: telegramUserId,
         username: telegramUser.username || null,
         first_name: telegramUser.first_name || null,
         last_name: telegramUser.last_name || null,
@@ -85,11 +87,15 @@ export class AuthService {
     }
   }
 
-  async getUserById(id: number) {
+  async getUserById(id: string) {
     return this.userService.findById(id);
   }
 
   private validateTelegramInitData(initData: string, botToken: string): boolean {
+    if (!botToken) {
+      return false;
+    }
+
     const params = new URLSearchParams(initData);
     const hash = params.get('hash');
     params.delete('hash');

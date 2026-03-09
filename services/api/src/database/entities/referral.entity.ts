@@ -18,10 +18,10 @@ export class Referral {
   id: number;
 
   @Column({ type: 'bigint' })
-  referrer_id: number;
+  referrer_id: string;
 
   @Column({ type: 'bigint' })
-  referred_id: number;
+  referred_id: string;
 
   @Column({ type: 'boolean', default: false })
   bonus_claimed: boolean;

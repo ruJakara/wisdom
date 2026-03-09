@@ -29,7 +29,7 @@ export class GameController {
   @Cooldown({ key: 'hunt', ttl: 5, message: 'Подождите 5 секунд перед следующей охотой' })
   async startHunt(@Request() req): Promise<StartHuntResponseDto> {
     // Anti-cheat: проверка минимального времени между запросами
-    return this.gameService.startHunt(req.user.id);
+    return this.gameService.startHunt(String(req.user.id));
   }
 
   @Post('action')
@@ -43,18 +43,18 @@ export class GameController {
     if (!dto.action || !['attack', 'escape', 'feed'].includes(dto.action)) {
       throw new BadRequestException('Недопустимое действие');
     }
-    return this.gameService.performAction(req.user.id, dto);
+    return this.gameService.performAction(String(req.user.id), dto);
   }
 
   @Get('state')
   async getGameState(@Request() req): Promise<GameStateResponseDto> {
-    return this.gameService.getGameState(req.user.id);
+    return this.gameService.getGameState(String(req.user.id));
   }
 
   @Post('respawn')
   @HttpCode(HttpStatus.OK)
   @Cooldown({ key: 'respawn', ttl: 10, message: 'Подождите 10 секунд перед следующим воскрешением' })
   async respawn(@Request() req): Promise<{ success: boolean; message: string }> {
-    return this.gameService.respawn(req.user.id);
+    return this.gameService.respawn(String(req.user.id));
   }
 }

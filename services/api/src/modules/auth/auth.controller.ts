@@ -20,6 +20,6 @@ export class AuthController {
   @Get('me')
   @UseGuards(AuthGuard)
   async getMe(@Request() req) {
-    return this.authService.getUserById(req.user.id);
+    return this.authService.getUserById(String(req.user.id));
   }
 }
