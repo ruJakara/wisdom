@@ -18,12 +18,12 @@ export class UpgradeController {
 
   @Get('options')
   async getUpgradeOptions(@Request() req): Promise<UpgradeOption[]> {
-    return this.upgradeService.getUpgradeOptions(req.user.id);
+    return this.upgradeService.getUpgradeOptions(String(req.user.id));
   }
 
   @Post('buy')
   @HttpCode(HttpStatus.OK)
   async buyUpgrade(@Request() req, @Body() dto: BuyUpgradeDto): Promise<BuyUpgradeResponse> {
-    return this.upgradeService.buyUpgrade(req.user.id, dto);
+    return this.upgradeService.buyUpgrade(String(req.user.id), dto);
   }
 }

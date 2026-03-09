@@ -6,6 +6,9 @@ import { APP_GUARD } from '@nestjs/core';
 import { AuthModule } from './modules/auth/auth.module';
 import { GameModule } from './modules/game/game.module';
 import { UserModule } from './modules/user/user.module';
+import { UpgradeModule } from './modules/upgrade/upgrade.module';
+import { InventoryModule } from './modules/inventory/inventory.module';
+import { ShopModule } from './modules/shop/shop.module';
 import { User, Inventory, GameLog, Referral, Item, Shop } from './database/entities';
 
 @Module({
@@ -40,6 +43,9 @@ import { User, Inventory, GameLog, Referral, Item, Shop } from './database/entit
     AuthModule,
     GameModule,
     UserModule,
+    UpgradeModule,
+    InventoryModule,
+    ShopModule,
   ],
   providers: [
     {

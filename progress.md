@@ -40,3 +40,32 @@ TODO / next agent suggestions:
   - Switched core modules (`auth/user/game`) to `scope='core'` and live backend by default.
   - Kept extended modules (`upgrade/inventory/shop/leaderboard/referral`) on `scope='extended'` mock by default.
   - Updated `.env.example`, `README.md`, `QUICKSTART.md`, `STATUS.md`, `DEVELOPMENT_PLAN.md` to reflect split-mode API integration.
+- Stage 3 validation + UX hardening (2026-03-10):
+  - User confirmed manual Telegram WebApp smoke: no critical errors in core hunt flow.
+  - Added unified API error mapping (`apps/web/src/api/error.ts`) for 401/network/timeout/server errors.
+  - Updated axios client: request timeout (`VITE_API_TIMEOUT_MS`), normalized error propagation, and non-hanging refresh queue handling for concurrent 401.
+  - Wired normalized error handling into `useAuth`, `useProfile`, `useHunt`, `useCombat`, and Hunt screen local error rendering.
+  - Added `VITE_API_TIMEOUT_MS=10000` to `.env.example`.
+  - Playwright smoke rerun via `develop-web-game` skill on `/hunt` with click `Начать охоту`; artifacts:
+    - `output/web-game/shot-0.png`
+    - `output/web-game/state-0.json`
+    - no new `errors-0.json` (clean run).
+- Stage 4 partial integration (2026-03-10):
+  - Re-enabled backend modules `upgrade`, `inventory`, `shop` in `services/api`:
+    - added modules to `AppModule`;
+    - removed these modules from `services/api/tsconfig.json` exclude;
+    - fixed outdated imports (`../../database/entities`) and aligned user IDs to `string`;
+    - fixed `InventoryService` compatibility issues (`findByIds` -> `find + In`, typing fixes, typo fix).
+  - Backend build confirmed: `npm run build --prefix services/api` -> OK.
+  - Frontend switched to live for `upgrade/inventory/shop` by moving these API clients to `scope='core'`.
+  - Updated screens (`Upgrade`, `Inventory`, `Shop`) to use normalized API error messages and profile refetch after actions.
+  - Local backend JWT smoke (seed + live API calls) passed:
+    - `GET /api/upgrade/options`
+    - `POST /api/upgrade/buy`
+    - `GET /api/inventory`
+    - `GET /api/shop/items?type=default`
+    - `POST /api/shop/buy`
+  - Playwright smoke via `develop-web-game` for `/upgrade`, `/inventory`, `/shop` passed with no new console errors:
+    - `output/web-game/stage4-upgrade/*`
+    - `output/web-game/stage4-inventory/*`
+    - `output/web-game/stage4-shop/*`

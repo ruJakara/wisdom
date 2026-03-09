@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { User } from '../database/entities/user.entity';
+import { User } from '../../database/entities';
 import { BuyUpgradeDto } from './dto/buy-upgrade.dto';
 
 export interface UpgradeOption {
@@ -31,7 +31,7 @@ export class UpgradeService {
   /**
    * Получить доступные улучшения для игрока
    */
-  async getUpgradeOptions(userId: number): Promise<UpgradeOption[]> {
+  async getUpgradeOptions(userId: string): Promise<UpgradeOption[]> {
     const user = await this.userRepository.findOne({ where: { id: userId } });
     
     if (!user) {
@@ -78,7 +78,7 @@ export class UpgradeService {
    * 1. Достаточно крови (blood_balance >= cost)
    * 2. Есть очки характеристик (stat_points > 0)
    */
-  async buyUpgrade(userId: number, dto: BuyUpgradeDto): Promise<{
+  async buyUpgrade(userId: string, dto: BuyUpgradeDto): Promise<{
     success: boolean;
     stat: string;
     newLevel: number;
@@ -125,7 +125,7 @@ export class UpgradeService {
    * Начислить очки характеристик за уровень
    * Формула: +3 stat points за каждый уровень
    */
-  async awardStatPoints(userId: number, levelsGained: number): Promise<void> {
+  async awardStatPoints(userId: string, levelsGained: number): Promise<void> {
     const POINTS_PER_LEVEL = 3;
     await this.userRepository.increment(
       { id: userId },

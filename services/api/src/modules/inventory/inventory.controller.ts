@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, UseGuards, Request, HttpCode, HttpStatus, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, UseGuards, Request, HttpCode, HttpStatus } from '@nestjs/common';
 import { InventoryService, InventoryItem, UseItemResponse } from './inventory.service';
 import { AuthGuard } from '../auth/auth.guard';
 import { UseItemDto, SellItemDto } from './dto/use-item.dto';
@@ -18,13 +18,13 @@ export class InventoryController {
 
   @Get()
   async getInventory(@Request() req): Promise<InventoryItem[]> {
-    return this.inventoryService.getInventory(req.user.id);
+    return this.inventoryService.getInventory(String(req.user.id));
   }
 
   @Post('use')
   @HttpCode(HttpStatus.OK)
   async useItem(@Request() req, @Body() dto: UseItemDto): Promise<UseItemResponse> {
-    return this.inventoryService.useItem(req.user.id, dto);
+    return this.inventoryService.useItem(String(req.user.id), dto);
   }
 
   @Post('sell')
@@ -34,7 +34,7 @@ export class InventoryController {
     @Body() dto: SellItemDto,
   ): Promise<SellItemResponse> {
     return this.inventoryService.sellItem(
-      req.user.id,
+      String(req.user.id),
       dto.itemId,
       dto.quantity || 1,
     );

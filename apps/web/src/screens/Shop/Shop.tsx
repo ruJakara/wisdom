@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useUserStore } from '../../store';
 import { shopApi, ShopItem } from '../../api';
+import { getApiErrorMessage } from '../../api/error';
+import { useProfile } from '../../hooks';
 import './Shop.css';
 
 interface ShopCardProps {
@@ -82,6 +84,7 @@ function Shop() {
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'default' | 'premium'>('default');
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
+  const { refetch: refetchProfile } = useProfile();
 
   const { level, bloodBalance } = useUserStore((state) => ({
     level: state.profile?.level || 1,
@@ -93,7 +96,9 @@ function Shop() {
       const data = await shopApi.getItems(type);
       setItems(data);
     } catch (error) {
-      console.error('Failed to fetch shop items:', error);
+      const message = getApiErrorMessage(error, 'Не удалось загрузить товары магазина');
+      setMessage({ text: message, type: 'error' });
+      console.error('Failed to fetch shop items:', message);
     }
   };
 
@@ -108,15 +113,11 @@ function Shop() {
     try {
       const response = await shopApi.buyItem(itemId, activeTab);
       setMessage({ text: response.message, type: 'success' });
-      
-      // Обновляем кровь в store
-      useUserStore.getState().updateBloodBalance(-response.totalPaid);
-      
-      // Небольшая задержка перед обновлением списка
-      setTimeout(() => fetchShopItems(activeTab), 500);
-    } catch (error: any) {
+
+      await Promise.all([fetchShopItems(activeTab), refetchProfile()]);
+    } catch (error) {
       setMessage({
-        text: error.response?.data?.message || 'Ошибка при покупке',
+        text: getApiErrorMessage(error, 'Ошибка при покупке'),
         type: 'error',
       });
     } finally {

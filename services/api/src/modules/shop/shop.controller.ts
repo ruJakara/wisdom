@@ -13,7 +13,7 @@ export class ShopController {
     @Request() req,
     @Query('type') shopType?: string,
   ): Promise<ShopItem[]> {
-    return this.shopService.getShopItems(req.user.id, shopType);
+    return this.shopService.getShopItems(String(req.user.id), shopType);
   }
 
   @Post('buy')
@@ -22,6 +22,6 @@ export class ShopController {
     @Request() req,
     @Body() dto: BuyItemDto,
   ): Promise<BuyItemResponse> {
-    return this.shopService.buyItem(req.user.id, dto);
+    return this.shopService.buyItem(String(req.user.id), dto);
   }
 }

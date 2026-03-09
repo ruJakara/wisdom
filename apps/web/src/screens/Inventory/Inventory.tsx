@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useUserStore } from '../../store';
 import { inventoryApi, InventoryItem } from '../../api';
+import { getApiErrorMessage } from '../../api/error';
+import { useProfile } from '../../hooks';
 import './Inventory.css';
 
 interface ItemCardProps {
@@ -68,6 +70,7 @@ function Inventory() {
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
   const [filter, setFilter] = useState<string>('all');
+  const { refetch: refetchProfile } = useProfile();
 
   const { bloodBalance } = useUserStore((state) => ({
     bloodBalance: state.profile?.bloodBalance || 0,
@@ -78,7 +81,9 @@ function Inventory() {
       const data = await inventoryApi.getInventory();
       setInventory(data);
     } catch (error) {
-      console.error('Failed to fetch inventory:', error);
+      const message = getApiErrorMessage(error, 'Не удалось загрузить инвентарь');
+      setMessage({ text: message, type: 'error' });
+      console.error('Failed to fetch inventory:', message);
     }
   };
 
@@ -93,17 +98,10 @@ function Inventory() {
     try {
       const response = await inventoryApi.useItem(itemId);
       setMessage({ text: response.message, type: 'success' });
-      await fetchInventory();
-      
-      // Обновляем HP в store если было исцеление
-      if (response.effect?.type === 'heal') {
-        useUserStore.getState().updateHp(
-          useUserStore.getState().profile!.currentHp + response.effect.value
-        );
-      }
-    } catch (error: any) {
+      await Promise.all([fetchInventory(), refetchProfile()]);
+    } catch (error) {
       setMessage({
-        text: error.response?.data?.message || 'Ошибка при использовании',
+        text: getApiErrorMessage(error, 'Ошибка при использовании'),
         type: 'error',
       });
     } finally {
@@ -118,13 +116,10 @@ function Inventory() {
     try {
       const response = await inventoryApi.sellItem(itemId, 1);
       setMessage({ text: response.message, type: 'success' });
-      await fetchInventory();
-      
-      // Обновляем кровь в store
-      useUserStore.getState().updateBloodBalance(response.totalReceived);
-    } catch (error: any) {
+      await Promise.all([fetchInventory(), refetchProfile()]);
+    } catch (error) {
       setMessage({
-        text: error.response?.data?.message || 'Ошибка при продаже',
+        text: getApiErrorMessage(error, 'Ошибка при продаже'),
         type: 'error',
       });
     } finally {

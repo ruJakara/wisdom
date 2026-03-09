@@ -1,10 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource } from 'typeorm';
-import { Shop } from '../database/entities/shop.entity';
-import { Item } from '../database/entities/item.entity';
-import { User } from '../database/entities/user.entity';
-import { Inventory } from '../database/entities/inventory.entity';
+import { Repository, DataSource, QueryRunner } from 'typeorm';
+import { Inventory, Item, Shop, User } from '../../database/entities';
 import { BuyItemDto } from './dto/buy-item.dto';
 
 export interface ShopItem {
@@ -50,7 +47,7 @@ export class ShopService {
    * Получить товары магазина
    */
   async getShopItems(
-    userId: number,
+    userId: string,
     shopType: string = 'default',
   ): Promise<ShopItem[]> {
     const user = await this.userRepository.findOne({ where: { id: userId } });
@@ -97,7 +94,7 @@ export class ShopService {
    * Купить предмет
    */
   async buyItem(
-    userId: number,
+    userId: string,
     dto: BuyItemDto,
   ): Promise<BuyItemResponse> {
     const queryRunner = this.dataSource.createQueryRunner();
@@ -192,8 +189,8 @@ export class ShopService {
    * Добавить предмет в инвентарь
    */
   private async addToInventory(
-    queryRunner: any,
-    userId: number,
+    queryRunner: QueryRunner,
+    userId: string,
     itemId: string,
     itemType: string,
     quantity: number,

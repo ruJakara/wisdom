@@ -17,6 +17,8 @@
    - `VITE_USE_MOCK_API=false`
    - `VITE_USE_MOCK_CORE_API=false`
    - `VITE_USE_MOCK_EXTENDED_API=true`
+   - В этом режиме live: `auth/user/game/upgrade/inventory/shop`
+   - В mock остаются: `leaderboard/referral`
 3. Запустить `npm run dev --prefix apps/web`.
 
 Для backend MVP (Stage 2):

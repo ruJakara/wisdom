@@ -1,9 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource } from 'typeorm';
-import { Inventory } from '../database/entities/inventory.entity';
-import { User } from '../database/entities/user.entity';
-import { Item } from '../database/entities/item.entity';
+import { Repository, DataSource, In, QueryRunner } from 'typeorm';
+import { Inventory, Item, User } from '../../database/entities';
 import { UseItemDto } from './dto/use-item.dto';
 
 export interface InventoryItem {
@@ -40,7 +38,7 @@ export class InventoryService {
   /**
    * Получить инвентарь игрока
    */
-  async getInventory(userId: number): Promise<InventoryItem[]> {
+  async getInventory(userId: string): Promise<InventoryItem[]> {
     const inventory = await this.inventoryRepository.find({
       where: { user_id: userId },
       relations: ['user'],
@@ -48,7 +46,9 @@ export class InventoryService {
 
     // Получаем предметы из справочника
     const itemIds = inventory.map((inv) => inv.item_id);
-    const items = await this.itemRepository.findByIds(itemIds);
+    const items = itemIds.length > 0
+      ? await this.itemRepository.find({ where: { id: In(itemIds) } })
+      : [];
     const itemMap = new Map(items.map((item) => [item.id, item]));
 
     return inventory.map((inv) => {
@@ -58,7 +58,7 @@ export class InventoryService {
         itemType: inv.item_type,
         quantity: inv.quantity,
         name: item?.name,
-        icon: item?.icon,
+        icon: item?.icon ?? undefined,
         effectValue: item?.effect_value,
       };
     });
@@ -67,7 +67,7 @@ export class InventoryService {
   /**
    * Использовать предмет
    */
-  async useItem(userId: number, dto: UseItemDto): Promise<UseItemResponse> {
+  async useItem(userId: string, dto: UseItemDto): Promise<UseItemResponse> {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
@@ -147,7 +147,7 @@ export class InventoryService {
   /**
    * Продать предмет
    */
-  async sellItem(userId: number, itemId: string, quantity: number = 1): Promise<{
+  async sellItem(userId: string, itemId: string, quantity: number = 1): Promise<{
     success: boolean;
     itemId: string;
     soldQuantity: number;
@@ -222,7 +222,7 @@ export class InventoryService {
    * Добавить предмет в инвентарь
    */
   async addItem(
-    userId: number,
+    userId: string,
     itemId: string,
     quantity: number = 1,
   ): Promise<void> {
@@ -238,7 +238,7 @@ export class InventoryService {
       // Создаём новую запись
       const newInventory = this.inventoryRepository.create({
         user_id: userId,
-        item_id,
+        item_id: itemId,
         item_type: 'unknown', // Будет обновлено при получении из Item
         quantity,
       });
@@ -250,8 +250,8 @@ export class InventoryService {
    * Применить зелье
    */
   private async applyPotion(
-    queryRunner: any,
-    userId: number,
+    queryRunner: QueryRunner,
+    userId: string,
     item: Item,
   ): Promise<{ type: string; value: number }> {
     const healAmount = item.effect_value || 0;
@@ -282,8 +282,8 @@ export class InventoryService {
    * Применить скин
    */
   private async applySkin(
-    queryRunner: any,
-    userId: number,
+    queryRunner: QueryRunner,
+    userId: string,
     item: Item,
   ): Promise<void> {
     await queryRunner.manager.update(

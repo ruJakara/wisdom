@@ -1,16 +1,19 @@
 # Night Hunger: Vampire Evo
 
-Проект находится в recovery-фазе (Stage 2, 9 марта 2026).
+Проект находится в recovery-фазе (Stage 4 partial, 10 марта 2026).
 
 ## Актуальный статус
 
 - Рабочий baseline: Telegram bot + восстановленные экраны WebApp.
-- Web frontend в Stage 3 работает в split-режиме:
-  - core API (`auth/user/game`) -> live backend MVP
-  - extended API (`upgrade/inventory/shop/leaderboard/referral`) -> mock
-- `services/api` собирается в MVP-конфигурации (`auth/user/game`).
-- Базовый backend цикл `auth -> hunt -> action -> state` подтверждён локальным smoke.
-- Расширенные backend-модули временно отключены до следующей интеграции.
+- Web frontend работает в split-режиме:
+  - core API (`auth/user/game/upgrade/inventory/shop`) -> live backend MVP
+  - extended API (`leaderboard/referral`) -> mock
+- `services/api` собирается с включенными модулями:
+  - `auth`, `user`, `game`, `upgrade`, `inventory`, `shop`
+- Подтверждён локальный smoke для:
+  - `auth -> hunt -> action -> state`
+  - `upgrade -> inventory -> shop` (JWT smoke)
+- Расширенные backend-модули (`leaderboard`, `referral`, `payment`, `notification`) временно отключены до следующей интеграции.
 - Рекомендованный запуск бота: `run-bot-only.bat`.
 
 Подробный статус и диагностические команды: `STATUS.md`.

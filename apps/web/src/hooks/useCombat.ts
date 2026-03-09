@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { useHunt } from './useHunt';
+import { getApiErrorMessage } from '../api/error';
 
 interface CombatState {
   isProcessing: boolean;
@@ -29,8 +30,7 @@ export function useCombat() {
         addCombatLog('🏆 Враг повержен!');
       }
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Неизвестная ошибка';
+      const errorMessage = getApiErrorMessage(error, 'Ошибка атаки');
       setState({ isProcessing: false, error: errorMessage });
       addCombatLog(`❌ Ошибка: ${errorMessage}`);
       return;
@@ -54,8 +54,7 @@ export function useCombat() {
         addCombatLog('⚠️ Побег не удался!');
       }
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Неизвестная ошибка';
+      const errorMessage = getApiErrorMessage(error, 'Ошибка побега');
       setState({ isProcessing: false, error: errorMessage });
       addCombatLog(`❌ Ошибка: ${errorMessage}`);
       return;
@@ -77,8 +76,7 @@ export function useCombat() {
         addCombatLog('💪 Вы восстановили силы!');
       }
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Неизвестная ошибка';
+      const errorMessage = getApiErrorMessage(error, 'Ошибка поглощения');
       setState({ isProcessing: false, error: errorMessage });
       addCombatLog(`❌ Ошибка: ${errorMessage}`);
       return;

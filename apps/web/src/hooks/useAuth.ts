@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { useUserStore } from '../store';
 import { authApi } from '../api';
+import { getApiErrorMessage } from '../api/error';
 
 export function useAuth() {
   const { setTokens, setUser, logout, setLoading, setError } = useUserStore();
@@ -17,7 +18,7 @@ export function useAuth() {
 
         return response;
       } catch (error) {
-        const message = error instanceof Error ? error.message : 'Failed to login';
+        const message = getApiErrorMessage(error, 'Ошибка входа через Telegram');
         setError(message);
         throw error;
       } finally {

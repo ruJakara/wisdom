@@ -4,6 +4,7 @@ import { useUserStore } from '../../store/userStore';
 import { EnemyCard, CombatLog, ActionButtons } from '../../components/game';
 import { useHunt, useCombat, useEnemy } from '../../hooks';
 import { PlayerCard } from '../../components/common';
+import { getApiErrorMessage } from '../../api/error';
 
 function Hunt() {
   const { isHunting, currentEnemy, combatLog, canHunt } = useGameStore();
@@ -28,7 +29,7 @@ function Hunt() {
     try {
       await startHunt();
     } catch (err) {
-      setLocalError(err instanceof Error ? err.message : 'Ошибка начала охоты');
+      setLocalError(getApiErrorMessage(err, 'Ошибка начала охоты'));
     } finally {
       setIsStarting(false);
     }
@@ -40,7 +41,7 @@ function Hunt() {
     try {
       await respawn();
     } catch (err) {
-      setLocalError(err instanceof Error ? err.message : 'Ошибка воскрешения');
+      setLocalError(getApiErrorMessage(err, 'Ошибка воскрешения'));
     } finally {
       setIsStarting(false);
     }

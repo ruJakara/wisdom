@@ -1,16 +1,28 @@
 import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { useUserStore } from '../store';
+import { getApiErrorMessage } from './error';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+const API_TIMEOUT_MS = Number.parseInt(import.meta.env.VITE_API_TIMEOUT_MS || '10000', 10);
+
+interface RetriableRequestConfig extends InternalAxiosRequestConfig {
+  _retry?: boolean;
+}
+
+interface RefreshSubscriber {
+  onSuccess: (token: string) => void;
+  onFailure: (error: Error) => void;
+}
 
 class ApiClient {
   private instance: AxiosInstance;
   private isRefreshing = false;
-  private refreshSubscribers: ((token: string) => void)[] = [];
+  private refreshSubscribers: RefreshSubscriber[] = [];
 
   constructor() {
     this.instance = axios.create({
       baseURL: API_URL,
+      timeout: API_TIMEOUT_MS,
       headers: {
         'Content-Type': 'application/json',
       },
@@ -36,18 +48,21 @@ class ApiClient {
     this.instance.interceptors.response.use(
       (response) => response,
       async (error: AxiosError<{ message?: string }>) => {
-        const originalRequest = error.config as InternalAxiosRequestConfig & {
-          _retry?: boolean;
-        };
+        const originalRequest = error.config as RetriableRequestConfig;
 
-        if (error.response?.status === 401 && !originalRequest._retry) {
+        if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
           if (this.isRefreshing) {
-            return new Promise((resolve) => {
-              this.refreshSubscribers.push((token: string) => {
-                if (originalRequest.headers) {
-                  originalRequest.headers.Authorization = `Bearer ${token}`;
-                }
-                resolve(this.instance(originalRequest));
+            return new Promise((resolve, reject) => {
+              this.refreshSubscribers.push({
+                onSuccess: (token: string) => {
+                  if (originalRequest.headers) {
+                    originalRequest.headers.Authorization = `Bearer ${token}`;
+                  }
+                  resolve(this.instance(originalRequest));
+                },
+                onFailure: (refreshError: Error) => {
+                  reject(refreshError);
+                },
               });
             });
           }
@@ -58,18 +73,16 @@ class ApiClient {
           try {
             const refreshToken = useUserStore.getState().refreshToken;
             if (!refreshToken) {
-              throw new Error('No refresh token');
+              throw new Error('Сессия истекла. Войдите снова.');
             }
 
-            const response = await axios.post(`${API_URL}/auth/refresh`, {
-              refreshToken,
-            });
+            const response = await axios.post(`${API_URL}/auth/refresh`, { refreshToken }, { timeout: API_TIMEOUT_MS });
 
             const { accessToken, refreshToken: newRefreshToken } = response.data;
             useUserStore.getState().setTokens(accessToken, newRefreshToken);
 
             this.isRefreshing = false;
-            this.refreshSubscribers.forEach((callback) => callback(accessToken));
+            this.refreshSubscribers.forEach((subscriber) => subscriber.onSuccess(accessToken));
             this.refreshSubscribers = [];
 
             if (originalRequest.headers) {
@@ -78,13 +91,17 @@ class ApiClient {
             return this.instance(originalRequest);
           } catch (refreshError) {
             this.isRefreshing = false;
+            const normalizedError = new Error(
+              getApiErrorMessage(refreshError, 'Сессия истекла. Войдите снова.'),
+            );
+            this.refreshSubscribers.forEach((subscriber) => subscriber.onFailure(normalizedError));
             this.refreshSubscribers = [];
             useUserStore.getState().logout();
-            return Promise.reject(refreshError);
+            return Promise.reject(normalizedError);
           }
         }
 
-        return Promise.reject(error);
+        return Promise.reject(new Error(getApiErrorMessage(error)));
       }
     );
   }

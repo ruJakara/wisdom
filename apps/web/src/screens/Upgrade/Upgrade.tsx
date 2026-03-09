@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useUserStore } from '../../store';
 import { upgradeApi, UpgradeOption } from '../../api';
+import { getApiErrorMessage } from '../../api/error';
+import { useProfile } from '../../hooks';
 import './Upgrade.css';
 
 interface StatCardProps {
@@ -61,6 +63,7 @@ function Upgrade() {
   const [options, setOptions] = useState<UpgradeOption[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
+  const { refetch: refetchProfile } = useProfile();
   
   const { bloodBalance, statPoints } = useUserStore((state) => ({
     bloodBalance: state.profile?.bloodBalance || 0,
@@ -72,7 +75,9 @@ function Upgrade() {
       const data = await upgradeApi.getOptions();
       setOptions(data);
     } catch (error) {
-      console.error('Failed to fetch upgrade options:', error);
+      const message = getApiErrorMessage(error, 'Не удалось загрузить улучшения');
+      setMessage({ text: message, type: 'error' });
+      console.error('Failed to fetch upgrade options:', message);
     }
   };
 
@@ -87,11 +92,11 @@ function Upgrade() {
     try {
       const response = await upgradeApi.buyUpgrade(stat);
       setMessage({ text: response.message, type: 'success' });
-      await fetchUpgradeOptions();
-    } catch (error: any) {
-      setMessage({ 
-        text: error.response?.data?.message || 'Ошибка при улучшении', 
-        type: 'error' 
+      await Promise.all([fetchUpgradeOptions(), refetchProfile()]);
+    } catch (error) {
+      setMessage({
+        text: getApiErrorMessage(error, 'Ошибка при улучшении'),
+        type: 'error',
       });
     } finally {
       setIsLoading(false);

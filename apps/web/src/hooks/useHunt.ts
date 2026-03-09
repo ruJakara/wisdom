@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import { gameApi, GameActionType } from '../api/game';
 import { useGameStore } from '../store/gameStore';
 import { useUserStore } from '../store/userStore';
+import { getApiErrorMessage } from '../api/error';
 
 export function useHunt() {
   const {
@@ -19,8 +20,9 @@ export function useHunt() {
       setLastHuntTime(Date.now());
       return response;
     } catch (error) {
-      console.error('Failed to start hunt:', error);
-      throw error;
+      const message = getApiErrorMessage(error, 'Ошибка начала охоты');
+      console.error('Failed to start hunt:', message);
+      throw new Error(message);
     }
   }, [startHuntStore, setLastHuntTime]);
 
@@ -69,8 +71,9 @@ export function useHunt() {
 
         return response;
       } catch (error) {
-        console.error('Failed to perform action:', error);
-        throw error;
+        const message = getApiErrorMessage(error, 'Ошибка боевого действия');
+        console.error('Failed to perform action:', message);
+        throw new Error(message);
       }
     },
     [updateBloodBalance, updateXp, updateLevel, updateHp, endHunt]
@@ -88,8 +91,9 @@ export function useHunt() {
       }
       return response;
     } catch (error) {
-      console.error('Failed to respawn:', error);
-      throw error;
+      const message = getApiErrorMessage(error, 'Ошибка воскрешения');
+      console.error('Failed to respawn:', message);
+      throw new Error(message);
     }
   }, [updateHp]);
 
