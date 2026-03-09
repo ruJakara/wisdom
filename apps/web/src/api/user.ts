@@ -1,4 +1,5 @@
 import api from './client';
+import { mockBackend, withMockApi } from './mockBackend';
 
 export interface UserProfile {
   id: number;
@@ -35,18 +36,33 @@ export interface UpdateSkinResponse {
 }
 
 export const userApi = {
-  getProfile: async (): Promise<UserProfile> => {
-    const response = await api.get<UserProfile>('/user/profile');
-    return response.data;
-  },
+  getProfile: async (): Promise<UserProfile> =>
+    withMockApi(
+      async () => {
+        const response = await api.get<UserProfile>('/user/profile');
+        return response.data;
+      },
+      () => mockBackend.getProfile(),
+    ),
 
-  getStats: async (): Promise<UserStats> => {
-    const response = await api.get<UserStats>('/user/stats');
-    return response.data;
-  },
+  getStats: async (): Promise<UserStats> =>
+    withMockApi(
+      async () => {
+        const response = await api.get<UserStats>('/user/stats');
+        return response.data;
+      },
+      () => mockBackend.getStats(),
+    ),
 
-  updateSkin: async (skinId: string): Promise<UpdateSkinResponse> => {
-    const response = await api.put<UpdateSkinResponse>('/user/skin', { skinId });
-    return response.data;
-  },
+  updateSkin: async (skinId: string): Promise<UpdateSkinResponse> =>
+    withMockApi(
+      async () => {
+        const response = await api.put<UpdateSkinResponse>('/user/skin', { skinId });
+        return response.data;
+      },
+      async () => ({
+        success: true,
+        skinId,
+      }),
+    ),
 };

@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import WebApp from '@twa-dev/sdk';
-import { useAuth } from '../hooks';
+import { useAuth } from '../../hooks';
 
 interface TelegramInitProps {
-  children: React.ReactNode;
+  children: ReactNode;
 }
 
 export function TelegramInit({ children }: TelegramInitProps) {
@@ -11,18 +11,16 @@ export function TelegramInit({ children }: TelegramInitProps) {
   const { login, isAuthenticated } = useAuth();
 
   useEffect(() => {
-    // Initialize Telegram WebApp
-    WebApp.ready();
-    WebApp.expand();
+    try {
+      WebApp.ready();
+      WebApp.expand();
+      WebApp.enableClosingConfirmation();
+      WebApp.setHeaderColor('#1a1a1a');
+    } catch (error) {
+      console.warn('Telegram WebApp SDK is not available, fallback to web mode.', error);
+    }
 
-    // Enable closing confirmation
-    WebApp.enableClosingConfirmation();
-
-    // Set header color
-    WebApp.setHeaderColor('#1a1a1a');
-
-    // Get initData and login
-    const initData = WebApp.initData;
+    const initData = WebApp?.initData || '';
 
     if (initData && !isAuthenticated) {
       login(initData)

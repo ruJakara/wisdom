@@ -1,4 +1,5 @@
 import api from './client';
+import { mockBackend, withMockApi } from './mockBackend';
 
 export type LeaderboardFilter = 'xp' | 'kills' | 'level';
 
@@ -29,15 +30,23 @@ export const leaderboardApi = {
     limit = 50,
     offset = 0,
     filter: LeaderboardFilter = 'xp',
-  ): Promise<LeaderboardResponse> => {
-    const response = await api.get<LeaderboardResponse>('/leaderboard', {
-      params: { limit, offset, filter },
-    });
-    return response.data;
-  },
+  ): Promise<LeaderboardResponse> =>
+    withMockApi(
+      async () => {
+        const response = await api.get<LeaderboardResponse>('/leaderboard', {
+          params: { limit, offset, filter },
+        });
+        return response.data;
+      },
+      () => mockBackend.getLeaderboard(limit, offset, filter),
+    ),
 
-  getMyPosition: async (): Promise<PlayerPosition> => {
-    const response = await api.get<PlayerPosition>('/leaderboard/me');
-    return response.data;
-  },
+  getMyPosition: async (): Promise<PlayerPosition> =>
+    withMockApi(
+      async () => {
+        const response = await api.get<PlayerPosition>('/leaderboard/me');
+        return response.data;
+      },
+      () => mockBackend.getMyPosition(),
+    ),
 };

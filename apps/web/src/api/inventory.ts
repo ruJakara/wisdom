@@ -1,4 +1,5 @@
 import api from './client';
+import { mockBackend, withMockApi } from './mockBackend';
 
 export interface InventoryItem {
   itemId: string;
@@ -37,18 +38,30 @@ export interface SellItemResponse {
 }
 
 export const inventoryApi = {
-  getInventory: async (): Promise<InventoryItem[]> => {
-    const response = await api.get<InventoryItem[]>('/inventory');
-    return response.data;
-  },
+  getInventory: async (): Promise<InventoryItem[]> =>
+    withMockApi(
+      async () => {
+        const response = await api.get<InventoryItem[]>('/inventory');
+        return response.data;
+      },
+      () => mockBackend.getInventory(),
+    ),
 
-  useItem: async (itemId: string): Promise<UseItemResponse> => {
-    const response = await api.post<UseItemResponse>('/inventory/use', { itemId });
-    return response.data;
-  },
+  useItem: async (itemId: string): Promise<UseItemResponse> =>
+    withMockApi(
+      async () => {
+        const response = await api.post<UseItemResponse>('/inventory/use', { itemId });
+        return response.data;
+      },
+      () => mockBackend.useItem(itemId),
+    ),
 
-  sellItem: async (itemId: string, quantity: number = 1): Promise<SellItemResponse> => {
-    const response = await api.post<SellItemResponse>('/inventory/sell', { itemId, quantity });
-    return response.data;
-  },
+  sellItem: async (itemId: string, quantity: number = 1): Promise<SellItemResponse> =>
+    withMockApi(
+      async () => {
+        const response = await api.post<SellItemResponse>('/inventory/sell', { itemId, quantity });
+        return response.data;
+      },
+      () => mockBackend.sellItem(itemId, quantity),
+    ),
 };

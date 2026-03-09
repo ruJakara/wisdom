@@ -1,4 +1,5 @@
 import api from './client';
+import { mockBackend, withMockApi } from './mockBackend';
 
 export interface Enemy {
   type: string;
@@ -53,23 +54,39 @@ export interface RespawnResponse {
 }
 
 export const gameApi = {
-  startHunt: async (): Promise<StartHuntResponse> => {
-    const response = await api.get<StartHuntResponse>('/game/hunt');
-    return response.data;
-  },
+  startHunt: async (): Promise<StartHuntResponse> =>
+    withMockApi(
+      async () => {
+        const response = await api.get<StartHuntResponse>('/game/hunt');
+        return response.data;
+      },
+      () => mockBackend.startHunt(),
+    ),
 
-  performAction: async (action: GameActionType): Promise<GameActionResponse> => {
-    const response = await api.post<GameActionResponse>('/game/action', { action });
-    return response.data;
-  },
+  performAction: async (action: GameActionType): Promise<GameActionResponse> =>
+    withMockApi(
+      async () => {
+        const response = await api.post<GameActionResponse>('/game/action', { action });
+        return response.data;
+      },
+      () => mockBackend.performAction(action),
+    ),
 
-  getGameState: async (): Promise<GameState> => {
-    const response = await api.get<GameState>('/game/state');
-    return response.data;
-  },
+  getGameState: async (): Promise<GameState> =>
+    withMockApi(
+      async () => {
+        const response = await api.get<GameState>('/game/state');
+        return response.data;
+      },
+      () => mockBackend.getGameState(),
+    ),
 
-  respawn: async (): Promise<RespawnResponse> => {
-    const response = await api.post<RespawnResponse>('/game/respawn');
-    return response.data;
-  },
+  respawn: async (): Promise<RespawnResponse> =>
+    withMockApi(
+      async () => {
+        const response = await api.post<RespawnResponse>('/game/respawn');
+        return response.data;
+      },
+      () => mockBackend.respawn(),
+    ),
 };

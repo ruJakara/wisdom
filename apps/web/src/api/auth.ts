@@ -1,4 +1,5 @@
 import api from './client';
+import { mockBackend, withMockApi } from './mockBackend';
 
 export interface ValidateInitDataResponse {
   accessToken: string;
@@ -18,21 +19,43 @@ export interface RefreshTokenResponse {
 
 export const authApi = {
   validateInitData: async (initData: string): Promise<ValidateInitDataResponse> => {
-    const response = await api.post<ValidateInitDataResponse>('/auth/validate', {
-      initData,
-    });
-    return response.data;
+    return withMockApi(
+      async () => {
+        const response = await api.post<ValidateInitDataResponse>('/auth/validate', {
+          initData,
+        });
+        return response.data;
+      },
+      () => mockBackend.validateInitData(initData),
+    );
   },
 
   refreshToken: async (refreshToken: string): Promise<RefreshTokenResponse> => {
-    const response = await api.post<RefreshTokenResponse>('/auth/refresh', {
-      refreshToken,
-    });
-    return response.data;
+    return withMockApi(
+      async () => {
+        const response = await api.post<RefreshTokenResponse>('/auth/refresh', {
+          refreshToken,
+        });
+        return response.data;
+      },
+      () => mockBackend.refreshToken(),
+    );
   },
 
-  getMe: async () => {
-    const response = await api.get('/auth/me');
-    return response.data;
-  },
+  getMe: async () =>
+    withMockApi(
+      async () => {
+        const response = await api.get('/auth/me');
+        return response.data;
+      },
+      async () => {
+        const profile = await mockBackend.getProfile();
+        return {
+          id: profile.id,
+          username: profile.username,
+          firstName: profile.firstName,
+          lastName: profile.lastName,
+        };
+      },
+    ),
 };

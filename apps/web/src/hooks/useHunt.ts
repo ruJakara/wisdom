@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
-import { gameApi, GameActionType } from '../../api/game';
-import { useGameStore } from '../../store/gameStore';
-import { useUserStore } from '../../store/userStore';
+import { gameApi, GameActionType } from '../api/game';
+import { useGameStore } from '../store/gameStore';
+import { useUserStore } from '../store/userStore';
 
 export function useHunt() {
   const {
@@ -50,7 +50,7 @@ export function useHunt() {
           if (response.message.includes('Уровень повышен')) {
             const levelMatch = response.message.match(/Теперь (\d+)/);
             if (levelMatch) {
-              updateLevel(parseInt(levelMatch[1]));
+              updateLevel(Number.parseInt(levelMatch[1], 10));
             }
           }
 
@@ -83,7 +83,7 @@ export function useHunt() {
         // Обновление HP после воскрешения
         const hpMatch = response.message.match(/(\d+) HP/);
         if (hpMatch) {
-          updateHp(parseInt(hpMatch[1]));
+          updateHp(Number.parseInt(hpMatch[1], 10));
         }
       }
       return response;

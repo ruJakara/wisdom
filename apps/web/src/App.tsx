@@ -1,70 +1,136 @@
-import { useMemo } from 'react';
-
-type TelegramWebAppUser = {
-  id?: number;
-  username?: string;
-  first_name?: string;
-  last_name?: string;
-};
-
-type TelegramWebApp = {
-  initDataUnsafe?: {
-    user?: TelegramWebAppUser;
-  };
-  platform?: string;
-  version?: string;
-  expand?: () => void;
-};
+import { useEffect } from 'react';
+import {
+  HashRouter,
+  Navigate,
+  Route,
+  Routes,
+  useLocation,
+  useNavigate,
+} from 'react-router-dom';
+import { TelegramInit } from './components/common';
+import { useProfile } from './hooks';
+import { useGameStore, useUserStore } from './store';
+import Hub from './screens/Hub';
+import Hunt from './screens/Hunt';
+import Upgrade from './screens/Upgrade';
+import Inventory from './screens/Inventory';
+import Shop from './screens/Shop';
+import Leaderboard from './screens/Leaderboard';
+import Referral from './screens/Referral';
 
 declare global {
   interface Window {
-    Telegram?: {
-      WebApp?: TelegramWebApp;
-    };
+    render_game_to_text?: () => string;
+    advanceTime?: (ms: number) => Promise<void>;
   }
 }
 
-function App() {
-  const tg = window.Telegram?.WebApp;
-  const user = tg?.initDataUnsafe?.user;
+const NAV_ITEMS = [
+  { to: '/hub', label: 'Hub', icon: '🦇' },
+  { to: '/hunt', label: 'Hunt', icon: '⚔️' },
+  { to: '/inventory', label: 'Bag', icon: '🎒' },
+  { to: '/shop', label: 'Shop', icon: '🏪' },
+] as const;
 
-  const userDisplay = useMemo(() => {
-    if (!user) return 'guest';
-    if (user.username) return `@${user.username}`;
-    return [user.first_name, user.last_name].filter(Boolean).join(' ') || String(user.id ?? 'guest');
-  }, [user]);
+function useAutomationBridge(pathname: string) {
+  useEffect(() => {
+    window.render_game_to_text = () => {
+      const userState = useUserStore.getState();
+      const gameState = useGameStore.getState();
+
+      return JSON.stringify({
+        coordinateSystem: 'UI-only app; no canvas. DOM origin is top-left, x→right, y→down.',
+        route: pathname,
+        user: {
+          id: userState.profile?.id || null,
+          level: userState.profile?.level || 0,
+          hp: userState.profile
+            ? { current: userState.profile.currentHp, max: userState.profile.maxHp }
+            : null,
+          xp: userState.profile?.xp || 0,
+          blood: userState.profile?.bloodBalance || 0,
+          statPoints: userState.profile?.statPoints || 0,
+        },
+        hunt: {
+          isHunting: gameState.isHunting,
+          enemy: gameState.currentEnemy,
+          canHunt: gameState.canHunt(),
+          combatLogTail: gameState.combatLog.slice(-5),
+        },
+      });
+    };
+
+    window.advanceTime = async (ms: number) => {
+      await new Promise((resolve) => setTimeout(resolve, Math.max(0, ms)));
+    };
+
+    return () => {
+      delete window.render_game_to_text;
+      delete window.advanceTime;
+    };
+  }, [pathname]);
+}
+
+function AppShell() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { profile, isLoading } = useProfile();
+
+  useAutomationBridge(location.pathname);
+
+  const isActive = (route: string) => location.pathname.startsWith(route);
 
   return (
-    <main className="min-h-screen bg-slate-950 text-slate-100 p-6">
-      <div className="mx-auto max-w-3xl rounded-2xl border border-slate-800 bg-slate-900/80 p-6 md:p-8">
-        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Night Hunger: Vampire Evo</h1>
-        <p className="mt-3 text-slate-300">
-          WebApp открыт корректно. Это временный стабильный экран для проверки деплоя и запуска из Telegram.
-        </p>
+    <div className="h-screen overflow-hidden bg-slate-950 text-slate-100">
+      <main className="h-full overflow-y-auto pb-20">
+        {isLoading && !profile ? (
+          <div className="flex h-full items-center justify-center">
+            <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-red-500" />
+          </div>
+        ) : (
+        <Routes>
+          <Route path="/" element={<Navigate to="/hub" replace />} />
+          <Route path="/hub" element={<Hub />} />
+          <Route path="/hunt" element={<Hunt />} />
+          <Route path="/upgrade" element={<Upgrade />} />
+          <Route path="/inventory" element={<Inventory />} />
+          <Route path="/shop" element={<Shop />} />
+          <Route path="/leaderboard" element={<Leaderboard onBack={() => navigate('/hub')} />} />
+          <Route path="/referral" element={<Referral onBack={() => navigate('/hub')} />} />
+          <Route path="*" element={<Navigate to="/hub" replace />} />
+        </Routes>
+        )}
+      </main>
 
-        <div className="mt-6 grid gap-3 text-sm">
-          <div className="rounded-lg border border-slate-800 bg-slate-950 p-3">
-            <span className="text-slate-400">User:</span> <span className="font-mono">{userDisplay}</span>
-          </div>
-          <div className="rounded-lg border border-slate-800 bg-slate-950 p-3">
-            <span className="text-slate-400">Platform:</span>{' '}
-            <span className="font-mono">{tg?.platform || 'unknown'}</span>
-          </div>
-          <div className="rounded-lg border border-slate-800 bg-slate-950 p-3">
-            <span className="text-slate-400">Telegram WebApp:</span>{' '}
-            <span className="font-mono">{tg ? `connected (v${tg.version || 'n/a'})` : 'not detected'}</span>
-          </div>
-        </div>
+      <nav className="fixed bottom-0 left-0 right-0 border-t border-slate-800 bg-slate-900/95 backdrop-blur">
+        <ul className="mx-auto grid max-w-xl grid-cols-4">
+          {NAV_ITEMS.map((item) => (
+            <li key={item.to}>
+              <button
+                className={`flex w-full flex-col items-center gap-1 py-2 text-xs ${
+                  isActive(item.to) ? 'text-red-400' : 'text-slate-400'
+                }`}
+                onClick={() => navigate(item.to)}
+                type="button"
+              >
+                <span className="text-base">{item.icon}</span>
+                <span>{item.label}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      </nav>
+    </div>
+  );
+}
 
-        <button
-          className="mt-6 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold hover:bg-red-500"
-          onClick={() => tg?.expand?.()}
-          type="button"
-        >
-          Expand WebApp
-        </button>
-      </div>
-    </main>
+function App() {
+  return (
+    <HashRouter>
+      <TelegramInit>
+        <AppShell />
+      </TelegramInit>
+    </HashRouter>
   );
 }
 

@@ -1,4 +1,5 @@
 import api from './client';
+import { mockBackend, withMockApi } from './mockBackend';
 
 export interface ReferralInfo {
   code: string;
@@ -15,13 +16,21 @@ export interface ClaimBonusResponse {
 }
 
 export const referralApi = {
-  getReferralCode: async (): Promise<ReferralInfo> => {
-    const response = await api.get<ReferralInfo>('/referral/code');
-    return response.data;
-  },
+  getReferralCode: async (): Promise<ReferralInfo> =>
+    withMockApi(
+      async () => {
+        const response = await api.get<ReferralInfo>('/referral/code');
+        return response.data;
+      },
+      () => mockBackend.getReferralInfo(),
+    ),
 
-  claimBonus: async (): Promise<ClaimBonusResponse> => {
-    const response = await api.post<ClaimBonusResponse>('/referral/bonus');
-    return response.data;
-  },
+  claimBonus: async (): Promise<ClaimBonusResponse> =>
+    withMockApi(
+      async () => {
+        const response = await api.post<ClaimBonusResponse>('/referral/bonus');
+        return response.data;
+      },
+      () => mockBackend.claimReferralBonus(),
+    ),
 };

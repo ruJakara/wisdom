@@ -1,7 +1,7 @@
-import { memo, useMemo } from 'react';
+import { memo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useProfile } from '../../hooks';
-import { PlayerCard, MenuItem, TelegramInit } from '../../components/common';
+import { PlayerCard, MenuItem } from '../../components/common';
 
 const MENU_ITEMS = [
   { id: 'hunt', label: '🩸 Охота', path: '/hunt', color: 'bg-red-600', icon: '⚔️' },
@@ -9,17 +9,14 @@ const MENU_ITEMS = [
   { id: 'inventory', label: '🎒 Инвентарь', path: '/inventory', color: 'bg-purple-600', icon: '🎒' },
   { id: 'shop', label: '🏪 Магазин', path: '/shop', color: 'bg-green-600', icon: '🛒' },
   { id: 'leaderboard', label: '🏆 Лидеры', path: '/leaderboard', color: 'bg-yellow-600', icon: '👑' },
+  { id: 'referral', label: '👥 Рефералы', path: '/referral', color: 'bg-rose-600', icon: '🔗' },
 ] as const;
 
 function HubContent() {
   const navigate = useNavigate();
   const { profile, isLoading } = useProfile();
 
-  // Мемоизация обработчиков навигации
-  const handleNavigate = useMemo(
-    () => (path: string) => navigate(path),
-    [navigate]
-  );
+  const handleNavigate = useCallback((path: string) => navigate(path), [navigate]);
 
   if (isLoading || !profile) {
     return (
@@ -50,7 +47,6 @@ function HubContent() {
           <MenuItem
             key={item.id}
             label={item.label}
-            path={item.path}
             color={item.color}
             icon={item.icon}
             onClick={() => handleNavigate(item.path)}
@@ -61,10 +57,8 @@ function HubContent() {
   );
 }
 
-export const Hub = memo(function Hub() {
-  return (
-    <TelegramInit>
-      <HubContent />
-    </TelegramInit>
-  );
+const Hub = memo(function Hub() {
+  return <HubContent />;
 });
+
+export default Hub;

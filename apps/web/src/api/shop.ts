@@ -1,4 +1,5 @@
 import api from './client';
+import { mockBackend, withMockApi } from './mockBackend';
 
 export interface ShopItem {
   id: number;
@@ -31,13 +32,21 @@ export interface BuyItemResponse {
 }
 
 export const shopApi = {
-  getItems: async (type: string = 'default'): Promise<ShopItem[]> => {
-    const response = await api.get<ShopItem[]>(`/shop/items?type=${type}`);
-    return response.data;
-  },
+  getItems: async (type: string = 'default'): Promise<ShopItem[]> =>
+    withMockApi(
+      async () => {
+        const response = await api.get<ShopItem[]>(`/shop/items?type=${type}`);
+        return response.data;
+      },
+      () => mockBackend.getShopItems(type as 'default' | 'premium'),
+    ),
 
-  buyItem: async (itemId: string, shopType?: string): Promise<BuyItemResponse> => {
-    const response = await api.post<BuyItemResponse>('/shop/buy', { itemId, shopType });
-    return response.data;
-  },
+  buyItem: async (itemId: string, shopType?: string): Promise<BuyItemResponse> =>
+    withMockApi(
+      async () => {
+        const response = await api.post<BuyItemResponse>('/shop/buy', { itemId, shopType });
+        return response.data;
+      },
+      () => mockBackend.buyShopItem(itemId, (shopType as 'default' | 'premium') || 'default'),
+    ),
 };

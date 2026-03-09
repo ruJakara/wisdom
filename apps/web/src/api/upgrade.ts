@@ -1,4 +1,5 @@
 import api from './client';
+import { mockBackend, withMockApi } from './mockBackend';
 
 export interface UpgradeOption {
   stat: 'strength' | 'agility' | 'hp';
@@ -22,13 +23,21 @@ export interface BuyUpgradeResponse {
 }
 
 export const upgradeApi = {
-  getOptions: async (): Promise<UpgradeOption[]> => {
-    const response = await api.get<UpgradeOption[]>('/upgrade/options');
-    return response.data;
-  },
+  getOptions: async (): Promise<UpgradeOption[]> =>
+    withMockApi(
+      async () => {
+        const response = await api.get<UpgradeOption[]>('/upgrade/options');
+        return response.data;
+      },
+      () => mockBackend.getUpgradeOptions(),
+    ),
 
-  buyUpgrade: async (stat: 'strength' | 'agility' | 'hp'): Promise<BuyUpgradeResponse> => {
-    const response = await api.post<BuyUpgradeResponse>('/upgrade/buy', { stat });
-    return response.data;
-  },
+  buyUpgrade: async (stat: 'strength' | 'agility' | 'hp'): Promise<BuyUpgradeResponse> =>
+    withMockApi(
+      async () => {
+        const response = await api.post<BuyUpgradeResponse>('/upgrade/buy', { stat });
+        return response.data;
+      },
+      () => mockBackend.buyUpgrade(stat),
+    ),
 };

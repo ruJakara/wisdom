@@ -2,7 +2,6 @@ import { memo } from 'react';
 
 interface MenuItemProps {
   label: string;
-  path: string;
   color: string;
   onClick: () => void;
   icon?: string;
@@ -10,7 +9,6 @@ interface MenuItemProps {
 
 export const MenuItem = memo(function MenuItem({
   label,
-  path,
   color,
   onClick,
   icon,

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useGameStore } from '../../store/gameStore';
 import { useUserStore } from '../../store/userStore';
 import { EnemyCard, CombatLog, ActionButtons } from '../../components/game';
@@ -7,12 +7,20 @@ import { PlayerCard } from '../../components/common';
 
 function Hunt() {
   const { isHunting, currentEnemy, combatLog, canHunt } = useGameStore();
-  const { profile, stats } = useUserStore();
+  const { profile } = useUserStore();
   const { startHunt, respawn } = useHunt();
   const { attack, escape, feed, isProcessing, error } = useCombat();
-  const { isAlive, isDead, canFeed } = useEnemy();
+  const { canFeed } = useEnemy();
   const [isStarting, setIsStarting] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
+
+  if (!profile) {
+    return (
+      <div className="flex min-h-screen items-center justify-center p-4">
+        <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-red-500" />
+      </div>
+    );
+  }
 
   const handleStartHunt = async () => {
     setIsStarting(true);
@@ -39,25 +47,21 @@ function Hunt() {
   };
 
   // Проверка состояния игрока
-  const playerHp = profile?.currentHp || 0;
-  const playerMaxHp = profile?.maxHp || 100;
-  const isPlayerDead = playerHp <= 0;
+  const isPlayerDead = profile.currentHp <= 0;
 
   return (
     <div className="flex flex-col items-center justify-start min-h-screen p-4 space-y-4">
       <h1 className="text-2xl font-bold text-red-500">🩸 Охота</h1>
 
       {/* Карточка игрока */}
-      {profile && (
-        <PlayerCard
-          username={profile.username || profile.firstName || 'Игрок'}
-          level={profile.level}
-          currentHp={profile.currentHp}
-          maxHp={profile.maxHp}
-          xp={profile.xp}
-          bloodBalance={profile.bloodBalance}
-        />
-      )}
+      <PlayerCard
+        username={profile.username || profile.firstName || 'Игрок'}
+        level={profile.level}
+        currentHp={profile.currentHp}
+        maxHp={profile.maxHp}
+        xp={profile.xp}
+        bloodBalance={profile.bloodBalance}
+      />
 
       {/* Ошибка */}
       {(localError || error) && (
