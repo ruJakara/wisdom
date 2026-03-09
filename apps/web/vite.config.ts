@@ -2,8 +2,9 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 
-export default defineConfig({
+export default defineConfig(({ command }) => ({
   plugins: [react()],
+  base: command === 'build' ? '/wisdom/' : '/',
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
@@ -31,13 +32,7 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: false, // Отключаем sourcemaps для production
-    minify: 'terser',
-    terserOptions: {
-      compress: {
-        drop_console: true, // Удаляем console.log в production
-        drop_debugger: true,
-      },
-    },
+    minify: 'esbuild',
     rollupOptions: {
       output: {
         manualChunks: {
@@ -55,4 +50,4 @@ export default defineConfig({
   optimizeDeps: {
     include: ['react', 'react-dom', 'react-router-dom', 'framer-motion', 'zustand', 'axios'],
   },
-});
+}));
