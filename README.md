@@ -21,6 +21,7 @@
 - Live smoke доставки в Telegram подтверждён 10.03.2026 (job завершён с `success=true`, получен `messageId`).
 - Локальный аварийный запуск бота: `run-bot-only.bat`.
 - Production запуск: `docker-compose -f docker/docker-compose.prod.yml up -d --build` (включает сервис `bot` с автоперезапуском).
+  - Рекомендуется запускать с явным env-файлом: `docker-compose --env-file .env -f docker/docker-compose.prod.yml up -d --build`.
 
 Подробный статус и диагностические команды: `STATUS.md`.
 
@@ -41,9 +42,9 @@ run-bot-only.bat
 ## Production (Always-On Bot)
 
 ```bash
-docker-compose -f docker/docker-compose.prod.yml up -d --build
-docker-compose -f docker/docker-compose.prod.yml ps
-docker-compose -f docker/docker-compose.prod.yml logs -f bot
+docker-compose --env-file .env -f docker/docker-compose.prod.yml up -d --build
+docker-compose --env-file .env -f docker/docker-compose.prod.yml ps
+docker-compose --env-file .env -f docker/docker-compose.prod.yml logs -f bot
 ```
 
 ## Документация

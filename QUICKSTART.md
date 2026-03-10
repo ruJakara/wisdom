@@ -8,9 +8,9 @@ Production запуск (always-on бот через Docker):
    - `TELEGRAM_BOT_TOKEN`
    - `TELEGRAM_WEBAPP_URL`
 2. Запустить:
-   - `docker-compose -f docker/docker-compose.prod.yml up -d --build`
+   - `docker-compose --env-file .env -f docker/docker-compose.prod.yml up -d --build`
 3. Проверить бот:
-   - `docker-compose -f docker/docker-compose.prod.yml logs -f bot`
+   - `docker-compose --env-file .env -f docker/docker-compose.prod.yml logs -f bot`
 
 Локальный fallback запуск:
 

@@ -100,6 +100,7 @@
    - `TELEGRAM_BOT_TOKEN`
    - `TELEGRAM_WEBAPP_URL`
 3. Для production: `docker-compose -f docker/docker-compose.prod.yml up -d --build`.
+   - Рекомендуемый вариант: `docker-compose --env-file .env -f docker/docker-compose.prod.yml up -d --build`.
 4. Для локального fallback: `run-bot-only.bat`.
 5. В Telegram открыть бота, отправить `/start`, нажать `🎮 Играть`.
 

@@ -147,6 +147,19 @@ TODO / next agent suggestions:
     - `returnvalue.messageId=73`
   - Worker logs confirm successful processing without delivery warnings.
   - Marked notification live-delivery smoke as complete in `DEVELOPMENT_PLAN.md` and `STATUS.md`.
+- Incident follow-up: bot `/start` stopped responding (2026-03-10):
+  - Root cause: production stack was not running (`docker-compose ... prod.yml ps` showed no services).
+  - Recovery:
+    - restarted production stack with explicit env file:
+      - `docker-compose --env-file .env -f docker/docker-compose.prod.yml up -d --build`;
+    - verified services `api/web/worker/bot` are `Up`;
+    - verified bot logs:
+      - `Bot started successfully`
+      - `Start polling`
+      - `Run polling for bot ...`.
+  - Hardening:
+    - added safe defaults for prod compose env interpolation (`DB_*`, `TELEGRAM_BOT_TOKEN`, `WEB_APP_URL`);
+    - updated docs to use `--env-file .env` for prod commands (`README.md`, `QUICKSTART.md`, `STATUS.md`).
   - Docs sync:
     - `STATUS.md`, `README.md`, `QUICKSTART.md`, `DEVELOPMENT_PLAN.md` updated.
   - Build checks:

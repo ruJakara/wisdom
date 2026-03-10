@@ -35,7 +35,7 @@ services:
     environment:
       - NODE_ENV=production
       - REDIS_URL=${REDIS_URL}
-      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-}
     depends_on:
       - redis
     restart: unless-stopped
@@ -45,9 +45,9 @@ services:
       context: ../apps/bot
       dockerfile: ../../docker/bot/Dockerfile
     environment:
-      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-}
       - TELEGRAM_WEBAPP_URL=${TELEGRAM_WEBAPP_URL}
-      - WEB_APP_URL=${WEB_APP_URL}
+      - WEB_APP_URL=${WEB_APP_URL:-}
       - PYTHONUNBUFFERED=1
     depends_on:
       - api
@@ -56,9 +56,9 @@ services:
   postgres:
     image: postgres:15-alpine
     environment:
-      - POSTGRES_USER=${DB_USERNAME}
-      - POSTGRES_PASSWORD=${DB_PASSWORD}
-      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_USER=${DB_USERNAME:-postgres}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-password}
+      - POSTGRES_DB=${DB_NAME:-night_hunger}
     volumes:
       - pgdata:/var/lib/postgresql/data
     restart: unless-stopped
