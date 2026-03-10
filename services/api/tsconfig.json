@@ -32,11 +32,9 @@
     "node_modules",
     "dist",
     "test",
+    "**/*.spec.ts",
     "src/database/migrations/**",
     "src/database/seeds/**",
-    "src/modules/leaderboard/**",
-    "src/modules/notification/**",
-    "src/modules/payment/**",
-    "src/modules/referral/**"
+    "src/modules/payment/**"
   ]
 }

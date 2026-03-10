@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { referralApi, ReferralInfo } from '../../api';
+import { getApiErrorMessage } from '../../api/error';
 import { useUserStore } from '../../store';
 
 interface ReferralProps {
@@ -20,9 +21,11 @@ function Referral({ onBack }: ReferralProps) {
       setIsLoading(true);
       const data = await referralApi.getReferralCode();
       setReferralInfo(data);
+      setMessage(null);
     } catch (error) {
-      console.error('Failed to fetch referral info:', error);
-      setMessage({ text: 'Ошибка загрузки данных', type: 'error' });
+      const message = getApiErrorMessage(error, 'Ошибка загрузки данных');
+      console.error('Failed to fetch referral info:', message);
+      setMessage({ text: message, type: 'error' });
     } finally {
       setIsLoading(false);
     }
@@ -84,8 +87,9 @@ function Referral({ onBack }: ReferralProps) {
         setMessage({ text: response.message, type: 'error' });
       }
     } catch (error: any) {
+      const message = getApiErrorMessage(error, 'Ошибка при получении бонуса');
       setMessage({
-        text: error.response?.data?.message || 'Ошибка при получении бонуса',
+        text: message,
         type: 'error',
       });
     } finally {

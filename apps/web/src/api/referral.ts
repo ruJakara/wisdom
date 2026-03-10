@@ -23,7 +23,7 @@ export const referralApi = {
         return response.data;
       },
       () => mockBackend.getReferralInfo(),
-      'extended',
+      'core',
     ),
 
   claimBonus: async (): Promise<ClaimBonusResponse> =>
@@ -33,6 +33,6 @@ export const referralApi = {
         return response.data;
       },
       () => mockBackend.claimReferralBonus(),
-      'extended',
+      'core',
     ),
 };

@@ -80,3 +80,91 @@ TODO / next agent suggestions:
   - Fixed broken production compose build contexts in `docker/docker-compose.prod.yml` (`../../...` -> `../...`).
   - Updated CI image build to include bot and corrected API/Web contexts in `.github/workflows/ci-cd.yml`.
   - Updated docs (`README.md`, `QUICKSTART.md`, `STATUS.md`, `BOT_ONLY.md`, `docs/DEPLOYMENT.md`) to make Docker prod path primary and batch script fallback-only.
+- Stage 4 social completion (2026-03-10):
+  - Backend: re-enabled and fixed `leaderboard` + `referral` modules in `services/api`:
+    - added `LeaderboardModule`/`ReferralModule` to `AppModule`;
+    - removed modules from TS exclude and added global `**/*.spec.ts` exclude;
+    - fixed outdated DTO import paths and aligned user ID handling to `string` for runtime services;
+    - removed broken Redis dependency from `LeaderboardService` (DB-first implementation for recovery mode);
+    - fixed referral typing bug (`referred_by` now `string`, not `BigInt`).
+  - Frontend: switched `leaderboardApi` and `referralApi` from `scope='extended'` to `scope='core'` (live backend).
+  - Frontend UX: unified API error handling in `Leaderboard` and `Referral` via `getApiErrorMessage`.
+  - Docs sync: updated `DEVELOPMENT_PLAN.md`, `STATUS.md`, `README.md`; added актуализация-note to `SPRINT_5_REPORT.md` to avoid status confusion.
+- Stage 4 queue contour restoration (2026-03-10):
+  - Reviewed custom debug skill: `.skills/game-debuger/SKILL.md` and applied root-cause-first workflow for `notification/worker` recovery.
+  - Fixed and re-enabled backend `notification` module in API:
+    - replaced broken `@nestjs/bull` wiring with direct `bull` queue providers bound to `REDIS_URL`;
+    - fixed outdated DTO import paths (`../dto` -> `./dto`);
+    - aligned `userId` flow to `string` (`req.user.id`) and removed unused userId fields from notification DTOs;
+    - fixed DTO validation typing (`IsBoolean`, `IsObject`).
+  - Enabled `NotificationModule` in `services/api/src/app.module.ts` and removed `notification` from `services/api/tsconfig.json` exclude.
+  - Build checks:
+    - `npm run build --prefix services/api` -> OK.
+    - `npm run build --prefix services/worker` -> OK.
+  - Runtime smoke (docker no-bot, 2026-03-10):
+    - `POST /api/notification/send` -> `201`, `Notification queued`.
+    - `POST /api/notification/reminder` -> `201`, `Reminder scheduled`.
+    - worker logs confirm execution:
+      - `[Notification] Job 1 completed`
+      - `[Reminder] Job 5 completed`.
+  - Documentation updated:
+    - `README.md`, `STATUS.md`, `QUICKSTART.md`, `DEVELOPMENT_PLAN.md`, `.env.example`.
+  - Remaining TODO for this area:
+    - replace worker log-only handlers with actual delivery to Telegram Bot API (currently queue jobs execute successfully but delivery adapter is TODO).
+- Stage 4 queue delivery adapter (2026-03-10, continued):
+  - Implemented Telegram Bot API delivery in `services/worker/src/main.ts`:
+    - added `sendTelegramMessage` transport (`fetch` -> `/bot<TOKEN>/sendMessage`);
+    - added transient error retry behavior for `429`/`5xx` (throw to let Bull retry);
+    - added explicit non-transient handling and structured skip reasons;
+    - added startup status log: Telegram delivery enabled/disabled.
+  - Updated worker environment wiring in compose files:
+    - `docker/docker-compose.prod.yml`
+    - `docker/docker-compose.dev.yml`
+    - `docker/docker-compose.no-bot.yml`
+    - `TELEGRAM_BOT_TOKEN` passed into `worker` service.
+  - Build checks:
+    - `npm run build --prefix services/worker` -> OK.
+    - `npm run build --prefix services/api` -> OK.
+  - E2E smoke (docker no-bot):
+    - `POST /api/notification/send` -> `201`.
+    - `POST /api/notification/reminder` -> `201`.
+    - worker processed both jobs and emitted explicit reason when token missing:
+      - `Delivery skipped/failed ... TELEGRAM_BOT_TOKEN is not configured`.
+  - Live transport verification (2026-03-10, with env token):
+    - Relaunched stack with explicit env file: `docker-compose --env-file .env -f docker/docker-compose.no-bot.yml up -d --build`.
+    - Confirmed inside container: `TOKEN_PRESENT` for worker.
+    - Queue endpoints still return `201` for send/reminder.
+    - Worker now performs real Telegram API calls; for test user IDs got concrete Telegram response:
+      - `Bad Request: chat not found` (expected for chat_id without active bot chat).
+    - Conclusion: transport layer is active; final acceptance requires one real chat_id that has opened bot via `/start`.
+- Stage 4 final notification delivery acceptance (2026-03-10):
+  - User confirmed `/start` sent from real chat.
+  - Pulled latest `chat_id` from Telegram updates and used it for JWT identity in smoke call.
+  - Executed `POST /api/notification/send` via API -> queue job id `1`.
+  - Verified Bull job return value directly from Redis queue:
+    - `state=completed`
+    - `returnvalue.success=true`
+    - `returnvalue.messageId=73`
+  - Worker logs confirm successful processing without delivery warnings.
+  - Marked notification live-delivery smoke as complete in `DEVELOPMENT_PLAN.md` and `STATUS.md`.
+  - Docs sync:
+    - `STATUS.md`, `README.md`, `QUICKSTART.md`, `DEVELOPMENT_PLAN.md` updated.
+  - Build checks:
+    - `npm run build --prefix services/api` -> OK.
+    - `npm run build --prefix apps/web` -> OK.
+  - API smoke (local, 2026-03-10):
+    - `GET /api/leaderboard?limit=5&offset=0&filter=xp` -> OK.
+    - `GET /api/leaderboard/me` -> OK.
+    - `GET /api/referral/code` -> OK.
+    - `POST /api/referral/bonus` -> OK (`Нет доступных бонусов` для пустого случая).
+  - Playwright smoke (`develop-web-game`):
+    - baseline routes: `/#/leaderboard`, `/#/referral` -> OK.
+    - click validation:
+      - `text=По убийствам` on Leaderboard -> filter switches (screenshot confirms active tab).
+      - `text=Забрать 100 крови` on Referral -> balance changes (state: blood `1200 -> 1300`, pending bonus `100 -> 0`).
+    - artifacts:
+      - `output/web-game/stage4-leaderboard/*`
+      - `output/web-game/stage4-referral/*`
+      - `output/web-game/stage4-leaderboard-click/*`
+      - `output/web-game/stage4-referral-click/*`
+    - no `output/web-game/errors-0.json` generated.

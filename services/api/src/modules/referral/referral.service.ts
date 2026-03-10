@@ -1,14 +1,14 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
-import { User } from '../../database/entities/user.entity';
-import { Referral } from '../../database/entities/referral.entity';
-import { ReferralInfoDto, ClaimBonusResponseDto } from '../dto/referral.dto';
+import { Referral, User } from '../../database/entities';
+import { ClaimBonusResponseDto, ReferralInfoDto } from './dto/referral.dto';
 
 @Injectable()
 export class ReferralService {
-  private readonly REFERRAL_BONUS = 100; // Бонус за реферала в крови
-  private readonly TELEGRAM_BOT_USERNAME = 'NightHungerBot'; // Заменить на актуальный
+  private readonly REFERRAL_BONUS = 100;
+  private readonly TELEGRAM_BOT_USERNAME =
+    process.env.TELEGRAM_BOT_USERNAME || 'NightHungerBot';
 
   constructor(
     @InjectRepository(User)
@@ -18,9 +18,10 @@ export class ReferralService {
     private readonly dataSource: DataSource,
   ) {}
 
-  async getReferralCode(userId: number): Promise<ReferralInfoDto> {
+  async getReferralCode(userId: string): Promise<ReferralInfoDto> {
+    const normalizedUserId = String(userId);
     const user = await this.userRepository.findOne({
-      where: { id: String(userId) },
+      where: { id: normalizedUserId },
       select: ['id', 'username', 'first_name', 'referral_code', 'referred_by'],
     });
 
@@ -28,27 +29,25 @@ export class ReferralService {
       throw new NotFoundException('User not found');
     }
 
-    // Генерируем код если нет
     let code = user.referral_code;
     if (!code) {
-      code = await this.generateReferralCode(userId);
+      code = await this.generateReferralCode(normalizedUserId);
     }
 
-    // Считаем статистику
     const referredCount = await this.referralRepository.count({
-      where: { referrer_id: String(userId) },
+      where: { referrer_id: normalizedUserId },
     });
 
     const pendingBonus = await this.referralRepository.count({
       where: {
-        referrer_id: String(userId),
+        referrer_id: normalizedUserId,
         bonus_claimed: false,
       },
     });
 
     const totalBonusClaimed = await this.referralRepository.count({
       where: {
-        referrer_id: String(userId),
+        referrer_id: normalizedUserId,
         bonus_claimed: true,
       },
     });
@@ -62,19 +61,19 @@ export class ReferralService {
     };
   }
 
-  async claimBonus(userId: number): Promise<ClaimBonusResponseDto> {
+  async claimBonus(userId: string): Promise<ClaimBonusResponseDto> {
+    const normalizedUserId = String(userId);
     const user = await this.userRepository.findOne({
-      where: { id: String(userId) },
+      where: { id: normalizedUserId },
     });
 
     if (!user) {
       throw new NotFoundException('User not found');
     }
 
-    // Находим все неотмеченные рефералы
     const pendingReferrals = await this.referralRepository.find({
       where: {
-        referrer_id: String(userId),
+        referrer_id: normalizedUserId,
         bonus_claimed: false,
       },
     });
@@ -87,7 +86,6 @@ export class ReferralService {
       };
     }
 
-    // Начисляем бонусы в транзакции
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
@@ -95,19 +93,17 @@ export class ReferralService {
     try {
       const totalBonus = pendingReferrals.length * this.REFERRAL_BONUS;
 
-      // Обновляем баланс пользователя
       await queryRunner.manager.increment(
         User,
-        { id: String(userId) },
+        { id: normalizedUserId },
         'blood_balance',
         totalBonus,
       );
 
-      // Отмечаем бонусы как полученные
       await queryRunner.manager.update(
         Referral,
         {
-          referrer_id: String(userId),
+          referrer_id: normalizedUserId,
           bonus_claimed: false,
         },
         { bonus_claimed: true },
@@ -129,16 +125,14 @@ export class ReferralService {
   }
 
   async processReferral(newUser: User, referralCode: string): Promise<void> {
-    // Проверяем реферальный код
     const referrer = await this.userRepository.findOne({
       where: { referral_code: referralCode },
     });
 
     if (!referrer || referrer.id === newUser.id) {
-      return; // Неверный код или сам на себя
+      return;
     }
 
-    // Проверяем, не был ли уже реферал
     const existingReferral = await this.referralRepository.findOne({
       where: {
         referrer_id: String(referrer.id),
@@ -150,7 +144,6 @@ export class ReferralService {
       return;
     }
 
-    // Создаём запись о реферале
     const referral = this.referralRepository.create({
       referrer_id: String(referrer.id),
       referred_id: String(newUser.id),
@@ -159,27 +152,23 @@ export class ReferralService {
 
     await this.referralRepository.save(referral);
 
-    // Обновляем referred_by у нового пользователя
-    newUser.referred_by = BigInt(referrer.id);
+    newUser.referred_by = String(referrer.id);
     await this.userRepository.save(newUser);
   }
 
-  private async generateReferralCode(userId: number): Promise<string> {
-    // Проверяем существующий код
+  private async generateReferralCode(userId: string): Promise<string> {
     const user = await this.userRepository.findOne({
-      where: { id: String(userId) },
+      where: { id: userId },
     });
 
     if (user?.referral_code) {
       return user.referral_code;
     }
 
-    // Генерируем уникальный код
     let code: string;
     let attempts = 0;
 
     do {
-      // Формат: REF + последние 6 символов ID + случайные 2 символа
       const suffix = String(userId).slice(-6).padStart(6, '0');
       const random = Math.random().toString(36).substring(2, 4).toUpperCase();
       code = `REF${suffix}${random}`;
@@ -190,9 +179,8 @@ export class ReferralService {
       }
     } while (await this.codeExists(code));
 
-    // Сохраняем код
     await this.userRepository.update(
-      { id: String(userId) },
+      { id: userId },
       { referral_code: code },
     );
 

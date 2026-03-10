@@ -45,6 +45,7 @@ services:
     environment:
       - NODE_ENV=development
       - REDIS_URL=redis://redis:6379
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-}
     depends_on:
       - redis
     volumes:

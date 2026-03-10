@@ -1,36 +1,39 @@
-import { Injectable, Inject } from '@nestjs/common';
+import { Injectable, Inject, OnModuleDestroy } from '@nestjs/common';
 import { Queue } from 'bull';
-import { ConfigService } from '@nestjs/config';
 import {
-  SendNotificationDto,
-  ScheduleReminderDto,
   NotificationType,
   NotificationPriority,
   NotificationResponseDto,
-} from '../dto/notification.dto';
+} from './dto/notification.dto';
 
 @Injectable()
-export class NotificationService {
-  private notificationQueue: Queue;
-  private reminderQueue: Queue;
+export class NotificationService implements OnModuleDestroy {
+  private readonly notificationQueue: Queue;
+  private readonly reminderQueue: Queue;
 
   constructor(
     @Inject('BULL_NOTIFICATION_QUEUE')
     notificationQueue: Queue,
     @Inject('BULL_REMINDER_QUEUE')
     reminderQueue: Queue,
-    private readonly configService: ConfigService,
   ) {
     this.notificationQueue = notificationQueue;
     this.reminderQueue = reminderQueue;
   }
 
+  async onModuleDestroy(): Promise<void> {
+    await Promise.allSettled([
+      this.notificationQueue.close(),
+      this.reminderQueue.close(),
+    ]);
+  }
+
   async sendPush(
-    userId: number,
+    userId: string,
     message: string,
     type: NotificationType = NotificationType.PUSH,
     priority: NotificationPriority = NotificationPriority.NORMAL,
-    data?: Record<string, any>,
+    data?: Record<string, unknown>,
   ): Promise<NotificationResponseDto> {
     try {
       const job = await this.notificationQueue.add(
@@ -66,7 +69,7 @@ export class NotificationService {
   }
 
   async scheduleReminder(
-    userId: number,
+    userId: string,
     message: string,
     timestamp: number,
     type = 'hunt_reminder',

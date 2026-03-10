@@ -10,9 +10,9 @@
 
 Текущий документ ниже описывает целевое состояние, но фактическое состояние проекта отличается:
 
-- WebApp и бот запускаются, но фронт временно переведён в стабильный экран-заглушку.
-- `services/api` не собирается (много TypeScript ошибок и несогласованных импортов/типов).
-- В `apps/web` есть экраны и API-слой, но они не согласованы с текущим backend.
+- WebApp и бот запускаются в рабочем recovery-контуре (экраны восстановлены).
+- `services/api` собирается и работает с активными модулями `auth/user/game/upgrade/inventory/shop/leaderboard/referral/notification`.
+- `apps/web` подключён к live API для core-геймплея + экономики + social (`leaderboard/referral`).
 
 Ниже добавлен **реалистичный recovery-план**. Работать рекомендуется по нему.
 
@@ -69,7 +69,7 @@
 ### Этап 3 — Интеграция frontend + backend (3-5 дней)
 **Цель:** убрать моки и подключить реальные API.
 
-- [x] Подключить фронт к живым endpoint-ам MVP (core `auth/user/game`; на Stage 4 partial добавлены live `upgrade/inventory/shop`).
+- [x] Подключить фронт к живым endpoint-ам MVP (core `auth/user/game`; на Stage 4 добавлены live `upgrade/inventory/shop/leaderboard/referral`).
 - [x] Проверить состояние пользователя, бой, награды, воскрешение (подтверждено вручную в Telegram WebApp, 2026-03-10).
 - [x] Подправить UX и обработку ошибок (401, сеть, timeouts).
 - [x] Добавить smoke-проверки для ключевых сценариев (Playwright smoke + `render_game_to_text`, 2026-03-10).
@@ -82,12 +82,14 @@
 ### Этап 4 — Социальные и экономические фичи (по готовности)
 **Цель:** подключить расширенные модули после ядра.
 
-- [x] `upgrade` + `inventory` + `shop` (Stage 4 partial, live в backend/frontend, 2026-03-10).
+- [x] `upgrade` + `inventory` + `shop` (live в backend/frontend, 2026-03-10).
 - [x] Перевести Telegram-бот в always-on инфраструктурный запуск (Docker Compose `prod`, сервис `bot`, автоперезапуск).
-- [ ] `leaderboard` + кэш.
-- [ ] `referral` (без ломки типов).
+- [x] `leaderboard` (live backend/frontend, 2026-03-10).
+- [x] `referral` (live backend/frontend, без ломки типов, 2026-03-10).
+- [x] `notification` + `worker` (queue-контур восстановлен, 2026-03-10).
+- [ ] `leaderboard` кэш (Redis) вернуть после стабилизации.
 - [ ] `payment` (убрать mock и сделать реальную интеграцию).
-- [ ] `worker` и фоновые задачи.
+- [x] Финальная проверка live-доставки уведомлений из worker в Telegram (валидный token + реальный chat smoke, 2026-03-10).
 
 **Готово, если:**
 - Все модули включаются без регрессии core-геймплея.
@@ -273,33 +275,33 @@
 ### Задачи
 
 #### Backend (NestJS)
-- [ ] **Leaderboard Module**
-  - [ ] GET /api/leaderboard — топ 100 игроков
-  - [ ] GET /api/leaderboard/me — позиция игрока
+- [x] **Leaderboard Module** (без Redis-кэша на текущем этапе)
+  - [x] GET /api/leaderboard — топ игроков
+  - [x] GET /api/leaderboard/me — позиция игрока
   - [ ] Кэширование в Redis (обновление каждые 5 мин)
-- [ ] **Referral Module**
-  - [ ] GET /api/referral/code — получить код
-  - [ ] GET /api/referral/bonus — забрать бонус
-  - [ ] Бонус за реферала: 100 крови
+- [x] **Referral Module**
+  - [x] GET /api/referral/code — получить код
+  - [x] POST /api/referral/bonus — забрать бонус
+  - [x] Бонус за реферала: 100 крови
 - [ ] **Payment Module**
   - [ ] POST /api/payment/create — создание платежа
   - [ ] POST /api/payment/webhook — обработка от Telegram
   - [ ] Интеграция Telegram Stars
-- [ ] **Notification Module**
-  - [ ] Push-уведомления через бота
-  - [ ] Планировщик (Bull Queue)
-  - [ ] Напоминания об охоте
+- [ ] **Notification Module** (частично завершён)
+  - [x] Push-уведомления через бота (delivery adapter + live smoke 2026-03-10)
+  - [x] Планировщик/очереди (Bull Queue)
+  - [x] Напоминания об охоте (queue job)
 
 #### Frontend (React)
-- [ ] **Leaderboard Screen**
-  - [ ] Таблица лидеров (ранг, игрок, XP)
-  - [ ] Подсветка текущей позиции
-  - [ ] Фильтры (по XP, по убийствам)
-- [ ] **Referral UI**
-  - [ ] Отображение реф. кода
-  - [ ] Кнопка «Пригласить» (share в Telegram)
-  - [ ] Список приглашённых
-  - [ ] Кнопка «Забрать бонус»
+- [x] **Leaderboard Screen**
+  - [x] Таблица лидеров (ранг, игрок, XP)
+  - [x] Подсветка текущей позиции
+  - [x] Фильтры (по XP, по убийствам)
+- [x] **Referral UI** (MVP-вариант)
+  - [x] Отображение реф. кода
+  - [x] Кнопка «Пригласить» (share в Telegram / fallback)
+  - [ ] Список приглашённых (детальный список по пользователям)
+  - [x] Кнопка «Забрать бонус»
 - [ ] **Shop Premium**
   - [ ] Покупка за Telegram Stars
   - [ ] Premium скины

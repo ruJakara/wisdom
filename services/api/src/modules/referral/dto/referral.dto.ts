@@ -1,4 +1,4 @@
-import { IsNumber, IsString, IsNotEmpty, IsOptional } from 'class-validator';
+import { IsBoolean, IsNotEmpty, IsNumber, IsString } from 'class-validator';
 
 export class GetReferralCodeDto {
   @IsString()
@@ -19,7 +19,7 @@ export class ClaimBonusDto {
 }
 
 export class ClaimBonusResponseDto {
-  @IsString()
+  @IsBoolean()
   success: boolean;
 
   @IsNumber()

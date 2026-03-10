@@ -1,4 +1,12 @@
-import { IsNumber, IsString, IsNotEmpty, IsOptional, IsEnum } from 'class-validator';
+import {
+  IsBoolean,
+  IsEnum,
+  IsNotEmpty,
+  IsNumber,
+  IsObject,
+  IsOptional,
+  IsString,
+} from 'class-validator';
 
 export enum NotificationType {
   PUSH = 'push',
@@ -13,10 +21,6 @@ export enum NotificationPriority {
 }
 
 export class SendNotificationDto {
-  @IsNumber()
-  @IsNotEmpty()
-  userId: number;
-
   @IsString()
   @IsNotEmpty()
   message: string;
@@ -29,16 +33,12 @@ export class SendNotificationDto {
   @IsOptional()
   priority?: NotificationPriority = NotificationPriority.NORMAL;
 
-  @IsString()
+  @IsObject()
   @IsOptional()
-  data?: string; // JSON string with additional data
+  data?: Record<string, unknown>;
 }
 
 export class ScheduleReminderDto {
-  @IsNumber()
-  @IsNotEmpty()
-  userId: number;
-
   @IsString()
   @IsNotEmpty()
   message: string;
@@ -53,7 +53,7 @@ export class ScheduleReminderDto {
 }
 
 export class NotificationResponseDto {
-  @IsString()
+  @IsBoolean()
   success: boolean;
 
   @IsString()

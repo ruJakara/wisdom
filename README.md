@@ -1,19 +1,24 @@
 # Night Hunger: Vampire Evo
 
-Проект находится в recovery-фазе (Stage 4 partial, 10 марта 2026).
+Проект находится в recovery-фазе (Stage 4 live core/economy/social, 10 марта 2026).
 
 ## Актуальный статус
 
 - Рабочий baseline: Telegram bot + восстановленные экраны WebApp.
 - Web frontend работает в split-режиме:
-  - core API (`auth/user/game/upgrade/inventory/shop`) -> live backend MVP
-  - extended API (`leaderboard/referral`) -> mock
+  - core API (`auth/user/game/upgrade/inventory/shop/leaderboard/referral`) -> live backend
+  - extended API -> временный mock-контур для будущих модулей
 - `services/api` собирается с включенными модулями:
-  - `auth`, `user`, `game`, `upgrade`, `inventory`, `shop`
+  - `auth`, `user`, `game`, `upgrade`, `inventory`, `shop`, `leaderboard`, `referral`, `notification`
 - Подтверждён локальный smoke для:
   - `auth -> hunt -> action -> state`
   - `upgrade -> inventory -> shop` (JWT smoke)
-- Расширенные backend-модули (`leaderboard`, `referral`, `payment`, `notification`) временно отключены до следующей интеграции.
+- `leaderboard -> referral` работает в live-контуре (API + UI smoke, включая клики по кнопкам).
+- `notification + worker` queue-контур восстановлен (enqueue через API и обработка worker).
+- Расширенный backend-модуль `payment` остаётся вне активного контура.
+- Telegram delivery adapter в `worker` подключен; для фактической отправки нужен `TELEGRAM_BOT_TOKEN` в окружении `worker`.
+  - Для локального docker-smoke используйте `docker-compose --env-file .env ...`, чтобы token гарантированно подхватился.
+- Live smoke доставки в Telegram подтверждён 10.03.2026 (job завершён с `success=true`, получен `messageId`).
 - Локальный аварийный запуск бота: `run-bot-only.bat`.
 - Production запуск: `docker-compose -f docker/docker-compose.prod.yml up -d --build` (включает сервис `bot` с автоперезапуском).
 

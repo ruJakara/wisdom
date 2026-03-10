@@ -9,6 +9,9 @@ import { UserModule } from './modules/user/user.module';
 import { UpgradeModule } from './modules/upgrade/upgrade.module';
 import { InventoryModule } from './modules/inventory/inventory.module';
 import { ShopModule } from './modules/shop/shop.module';
+import { LeaderboardModule } from './modules/leaderboard/leaderboard.module';
+import { ReferralModule } from './modules/referral/referral.module';
+import { NotificationModule } from './modules/notification/notification.module';
 import { User, Inventory, GameLog, Referral, Item, Shop } from './database/entities';
 
 @Module({
@@ -46,6 +49,9 @@ import { User, Inventory, GameLog, Referral, Item, Shop } from './database/entit
     UpgradeModule,
     InventoryModule,
     ShopModule,
+    LeaderboardModule,
+    ReferralModule,
+    NotificationModule,
   ],
   providers: [
     {

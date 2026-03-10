@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { leaderboardApi, LeaderboardEntry, LeaderboardFilter } from '../../api';
+import { getApiErrorMessage } from '../../api/error';
 
 interface LeaderboardProps {
   onBack?: () => void;
@@ -17,6 +18,7 @@ function Leaderboard({ onBack }: LeaderboardProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState<LeaderboardFilter>('xp');
   const [offset, setOffset] = useState(0);
+  const [message, setMessage] = useState<{ text: string; type: 'error' } | null>(null);
   const limit = 20;
 
   const fetchLeaderboard = async () => {
@@ -24,8 +26,11 @@ function Leaderboard({ onBack }: LeaderboardProps) {
       setIsLoading(true);
       const data = await leaderboardApi.getLeaderboard(limit, offset, activeFilter);
       setLeaderboard(data.leaderboard);
+      setMessage(null);
     } catch (error) {
-      console.error('Failed to fetch leaderboard:', error);
+      const message = getApiErrorMessage(error, 'Не удалось загрузить таблицу лидеров');
+      setMessage({ text: message, type: 'error' });
+      console.error('Failed to fetch leaderboard:', message);
     } finally {
       setIsLoading(false);
     }
@@ -36,7 +41,9 @@ function Leaderboard({ onBack }: LeaderboardProps) {
       const position = await leaderboardApi.getMyPosition();
       setMyPosition(position);
     } catch (error) {
-      console.error('Failed to fetch my position:', error);
+      const message = getApiErrorMessage(error, 'Не удалось загрузить вашу позицию');
+      setMessage((current) => current || { text: message, type: 'error' });
+      console.error('Failed to fetch my position:', message);
     }
   };
 
@@ -90,6 +97,11 @@ function Leaderboard({ onBack }: LeaderboardProps) {
           ))}
         </div>
       </header>
+      {message && (
+        <div className={`message ${message.type}`}>
+          ❌ {message.text}
+        </div>
+      )}
 
       {myPosition && (
         <div className="my-position-card">
@@ -267,6 +279,16 @@ function Leaderboard({ onBack }: LeaderboardProps) {
           display: flex;
           flex-direction: column;
           gap: 8px;
+        }
+
+        .message {
+          padding: 12px 16px;
+          border-radius: 8px;
+          margin-bottom: 16px;
+          font-size: 14px;
+          background: rgba(248, 113, 113, 0.2);
+          border: 1px solid rgba(248, 113, 113, 0.4);
+          color: #f87171;
         }
 
         .leaderboard-entry {

@@ -14,7 +14,7 @@ import {
   ScheduleReminderDto,
   NotificationType,
   NotificationPriority,
-} from '../dto/notification.dto';
+} from './dto/notification.dto';
 
 @Controller('notification')
 @UseGuards(AuthGuard)
@@ -27,11 +27,11 @@ export class NotificationController {
     @Body() dto: SendNotificationDto,
   ) {
     return this.notificationService.sendPush(
-      req.user.id,
+      String(req.user.id),
       dto.message,
       dto.type || NotificationType.PUSH,
       dto.priority || NotificationPriority.NORMAL,
-      dto.data ? JSON.parse(dto.data) : undefined,
+      dto.data,
     );
   }
 
@@ -41,7 +41,7 @@ export class NotificationController {
     @Body() dto: ScheduleReminderDto,
   ) {
     return this.notificationService.scheduleReminder(
-      req.user.id,
+      String(req.user.id),
       dto.message,
       dto.timestamp,
       dto.type,

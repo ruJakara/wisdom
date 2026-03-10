@@ -1,23 +1,20 @@
-import { Injectable, Inject } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Redis } from 'ioredis';
-import { User } from '../../database/entities/user.entity';
-import { GameLog } from '../../database/entities/game-log.entity';
-import { LeaderboardEntryDto, PlayerPositionDto, LeaderboardFilter } from '../dto/leaderboard.dto';
+import { GameLog, User } from '../../database/entities';
+import {
+  LeaderboardEntryDto,
+  LeaderboardFilter,
+  PlayerPositionDto,
+} from './dto/leaderboard.dto';
 
 @Injectable()
 export class LeaderboardService {
-  private readonly LEADERBOARD_CACHE_KEY = 'leaderboard:global';
-  private readonly CACHE_TTL = 300; // 5 минут
-
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
     @InjectRepository(GameLog)
     private readonly gameLogRepository: Repository<GameLog>,
-    @Inject('REDIS_CLIENT')
-    private readonly redisClient: Redis,
   ) {}
 
   async getLeaderboard(
@@ -25,14 +22,14 @@ export class LeaderboardService {
     offset = 0,
     filter: LeaderboardFilter = LeaderboardFilter.XP,
   ): Promise<LeaderboardEntryDto[]> {
-    // Пробуем получить из кэша
-    const cached = await this.getFromCache(limit, offset, filter);
-    if (cached) {
-      return cached;
+    const safeLimit = Math.max(1, Math.min(limit, 100));
+    const safeOffset = Math.max(0, offset);
+
+    if (filter === LeaderboardFilter.KILLS) {
+      return this.getKillsLeaderboard(safeLimit, safeOffset);
     }
 
-    // Получаем из БД
-    const queryBuilder = this.userRepository
+    const users = await this.userRepository
       .createQueryBuilder('user')
       .select([
         'user.id',
@@ -42,32 +39,27 @@ export class LeaderboardService {
         'user.xp',
       ])
       .orderBy(this.getOrderByColumn(filter), 'DESC')
-      .skip(offset)
-      .take(limit);
+      .addOrderBy('user.id', 'ASC')
+      .skip(safeOffset)
+      .take(safeLimit)
+      .getMany();
 
-    const users = await queryBuilder.getMany();
-
-    // Получаем количество убийств для каждого игрока
     const userIds = users.map((u) => u.id);
     const killsStats = await this.getKillsStats(userIds);
 
-    const result: LeaderboardEntryDto[] = users.map((user, index) => ({
-      rank: offset + index + 1,
+    return users.map((user, index) => ({
+      rank: safeOffset + index + 1,
       userId: Number(user.id),
       username: this.formatUsername(user),
       totalXp: user.xp,
       level: user.level,
       totalKills: killsStats.get(Number(user.id))?.kills || 0,
     }));
-
-    // Кэшируем результат
-    await this.saveToCache(result, limit, offset, filter);
-
-    return result;
   }
 
-  async getMyPosition(userId: number): Promise<PlayerPositionDto> {
-    const user = await this.userRepository.findOne({ where: { id: String(userId) } });
+  async getMyPosition(userId: string): Promise<PlayerPositionDto> {
+    const normalizedUserId = String(userId);
+    const user = await this.userRepository.findOne({ where: { id: normalizedUserId } });
 
     if (!user) {
       return {
@@ -79,7 +71,6 @@ export class LeaderboardService {
       };
     }
 
-    // Считаем позицию игрока
     const playersAbove = await this.userRepository
       .createQueryBuilder('user')
       .where('user.xp > :xp', { xp: user.xp })
@@ -87,14 +78,12 @@ export class LeaderboardService {
 
     const totalPlayers = await this.userRepository.count();
 
-    // Получаем количество убийств
-    const kills = await this.gameLogRepository
-      .createQueryBuilder('game_log')
-      .select('COUNT(*)', 'count')
-      .where('game_log.user_id = :userId', { userId: user.id })
-      .andWhere('game_log.result->>\'result\' = :result', { result: 'win' })
-      .getRawOne()
-      .then((r) => parseInt(r.count, 10));
+    const kills = await this.gameLogRepository.count({
+      where: {
+        user_id: user.id,
+        success: true,
+      },
+    });
 
     const rank = playersAbove + 1;
     const percentile = totalPlayers > 0 ? ((totalPlayers - rank) / totalPlayers) * 100 : 0;
@@ -108,44 +97,59 @@ export class LeaderboardService {
     };
   }
 
-  async invalidateCache(): Promise<void> {
-    await this.redisClient.del(this.LEADERBOARD_CACHE_KEY);
-  }
-
-  private async getFromCache(
+  private async getKillsLeaderboard(
     limit: number,
     offset: number,
-    filter: LeaderboardFilter,
-  ): Promise<LeaderboardEntryDto[] | null> {
-    const key = this.getCacheKey(limit, offset, filter);
-    const data = await this.redisClient.get(key);
+  ): Promise<LeaderboardEntryDto[]> {
+    const users = await this.userRepository
+      .createQueryBuilder('user')
+      .select([
+        'user.id',
+        'user.username',
+        'user.first_name',
+        'user.level',
+        'user.xp',
+      ])
+      .orderBy('user.id', 'ASC')
+      .getMany();
 
-    if (data) {
-      return JSON.parse(data) as LeaderboardEntryDto[];
-    }
+    const killsStats = await this.getKillsStats(users.map((u) => u.id));
 
-    return null;
-  }
+    const sortedEntries = users
+      .map((user) => ({
+        user,
+        kills: killsStats.get(Number(user.id))?.kills || 0,
+      }))
+      .sort((left, right) => {
+        if (right.kills !== left.kills) {
+          return right.kills - left.kills;
+        }
 
-  private async saveToCache(
-    data: LeaderboardEntryDto[],
-    limit: number,
-    offset: number,
-    filter: LeaderboardFilter,
-  ): Promise<void> {
-    const key = this.getCacheKey(limit, offset, filter);
-    await this.redisClient.setex(key, this.CACHE_TTL, JSON.stringify(data));
-  }
+        if (right.user.xp !== left.user.xp) {
+          return right.user.xp - left.user.xp;
+        }
 
-  private getCacheKey(limit: number, offset: number, filter: LeaderboardFilter): string {
-    return `${this.LEADERBOARD_CACHE_KEY}:${filter}:${limit}:${offset}`;
+        if (right.user.level !== left.user.level) {
+          return right.user.level - left.user.level;
+        }
+
+        return left.user.id.localeCompare(right.user.id);
+      });
+
+    return sortedEntries.slice(offset, offset + limit).map((entry, index) => ({
+      rank: offset + index + 1,
+      userId: Number(entry.user.id),
+      username: this.formatUsername(entry.user),
+      totalXp: entry.user.xp,
+      level: entry.user.level,
+      totalKills: entry.kills,
+    }));
   }
 
   private getOrderByColumn(filter: LeaderboardFilter): string {
     switch (filter) {
       case LeaderboardFilter.KILLS:
-        // Для сортировки по убийствам нужен JOIN с game_logs
-        return 'user.xp'; // Fallback на XP
+        return 'user.xp';
       case LeaderboardFilter.LEVEL:
         return 'user.level';
       case LeaderboardFilter.XP:
@@ -161,14 +165,18 @@ export class LeaderboardService {
   }
 
   private async getKillsStats(
-    userIds: number[],
+    userIds: string[],
   ): Promise<Map<number, { kills: number }>> {
+    if (userIds.length === 0) {
+      return new Map<number, { kills: number }>();
+    }
+
     const stats = await this.gameLogRepository
       .createQueryBuilder('game_log')
       .select('game_log.user_id', 'user_id')
       .addSelect('COUNT(*)', 'kills')
       .where('game_log.user_id IN (:...userIds)', { userIds })
-      .andWhere('game_log.result->>\'result\' = :result', { result: 'win' })
+      .andWhere('game_log.success = :success', { success: true })
       .groupBy('game_log.user_id')
       .getRawMany();
 

@@ -2,6 +2,73 @@ import Queue = require('bull');
 import { createClient } from 'redis';
 
 const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
+const telegramBotToken = process.env.TELEGRAM_BOT_TOKEN || '';
+const telegramApiBaseUrl = process.env.TELEGRAM_API_BASE_URL || 'https://api.telegram.org';
+
+interface TelegramSendResult {
+  delivered: boolean;
+  messageId?: number;
+  reason?: string;
+}
+
+function normalizeUserId(value: unknown): string {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return String(value);
+  }
+
+  if (typeof value === 'string' && value.trim().length > 0) {
+    return value.trim();
+  }
+
+  return '';
+}
+
+async function sendTelegramMessage(
+  userId: string,
+  message: string,
+): Promise<TelegramSendResult> {
+  if (!telegramBotToken) {
+    return { delivered: false, reason: 'TELEGRAM_BOT_TOKEN is not configured' };
+  }
+
+  if (!userId) {
+    return { delivered: false, reason: 'Invalid userId' };
+  }
+
+  const endpoint = `${telegramApiBaseUrl}/bot${telegramBotToken}/sendMessage`;
+  const response = await fetch(endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      chat_id: userId,
+      text: message,
+      parse_mode: 'HTML',
+      disable_web_page_preview: true,
+    }),
+  });
+
+  const payload = (await response.json()) as {
+    ok?: boolean;
+    description?: string;
+    result?: { message_id?: number };
+    error_code?: number;
+  };
+
+  if (response.ok && payload.ok) {
+    return {
+      delivered: true,
+      messageId: payload.result?.message_id,
+    };
+  }
+
+  const reason = payload.description || `HTTP ${response.status}`;
+
+  if (response.status >= 500 || response.status === 429) {
+    throw new Error(`Telegram temporary error: ${reason}`);
+  }
+
+  return { delivered: false, reason };
+}
 
 // ============================================
 // Notification Queue
@@ -10,12 +77,25 @@ const notificationQueue = new Queue('notifications', redisUrl);
 
 notificationQueue.process(async (job: Queue.Job) => {
   const { userId, message, type, priority } = job.data || {};
+  const targetUserId = normalizeUserId(userId);
 
-  console.log(`[Notification] Sending to user ${userId}: ${message}`);
+  console.log(`[Notification] Sending to user ${targetUserId}: ${message}`);
   console.log(`[Notification] Type: ${type}, Priority: ${priority}`);
 
-  // TODO: Integrate Telegram Bot API to send notifications.
-  return { success: true, userId, messageId: `msg_${Date.now()}` };
+  const delivery = await sendTelegramMessage(targetUserId, String(message || ''));
+
+  if (!delivery.delivered) {
+    console.warn(
+      `[Notification] Delivery skipped/failed for user ${targetUserId}: ${delivery.reason}`,
+    );
+  }
+
+  return {
+    success: delivery.delivered,
+    userId: targetUserId,
+    messageId: delivery.messageId ?? null,
+    reason: delivery.reason ?? null,
+  };
 });
 
 notificationQueue.on('completed', (job: Queue.Job) => {
@@ -33,12 +113,25 @@ const reminderQueue = new Queue('reminder', redisUrl);
 
 reminderQueue.process(async (job: Queue.Job) => {
   const { userId, message, type } = job.data || {};
+  const targetUserId = normalizeUserId(userId);
 
-  console.log(`[Reminder] Sending to user ${userId}: ${message}`);
+  console.log(`[Reminder] Sending to user ${targetUserId}: ${message}`);
   console.log(`[Reminder] Type: ${type}`);
 
-  // TODO: Integrate Telegram Bot API for reminders.
-  return { success: true, userId, messageId: `msg_${Date.now()}` };
+  const delivery = await sendTelegramMessage(targetUserId, String(message || ''));
+
+  if (!delivery.delivered) {
+    console.warn(
+      `[Reminder] Delivery skipped/failed for user ${targetUserId}: ${delivery.reason}`,
+    );
+  }
+
+  return {
+    success: delivery.delivered,
+    userId: targetUserId,
+    messageId: delivery.messageId ?? null,
+    reason: delivery.reason ?? null,
+  };
 });
 
 reminderQueue.on('completed', (job: Queue.Job) => {
@@ -147,6 +240,9 @@ async function scheduleJobs() {
 async function main() {
   console.log('[Worker] Starting worker service...');
   console.log('[Worker] Redis URL:', redisUrl);
+  console.log(
+    `[Worker] Telegram delivery: ${telegramBotToken ? 'enabled' : 'disabled (no token)'}`,
+  );
 
   await scheduleJobs();
 

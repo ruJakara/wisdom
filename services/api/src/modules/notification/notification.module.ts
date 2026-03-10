@@ -1,26 +1,32 @@
 import { Module } from '@nestjs/common';
-import { BullModule } from '@nestjs/bull';
+import { ConfigService } from '@nestjs/config';
+import Queue = require('bull');
 import { NotificationService } from './notification.service';
 import { NotificationController } from './notification.controller';
 
+const createQueue = (name: string, redisUrl: string): Queue.Queue =>
+  new Queue(name, redisUrl);
+
 @Module({
-  imports: [
-    BullModule.registerQueue({
-      name: 'notifications',
-    }),
-    BullModule.registerQueue({
-      name: 'reminder',
-    }),
-  ],
   providers: [
     NotificationService,
     {
       provide: 'BULL_NOTIFICATION_QUEUE',
-      useFactory: () => BullModule.getQueue('notifications'),
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) =>
+        createQueue(
+          'notifications',
+          configService.get<string>('REDIS_URL') || 'redis://localhost:6379',
+        ),
     },
     {
       provide: 'BULL_REMINDER_QUEUE',
-      useFactory: () => BullModule.getQueue('reminder'),
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) =>
+        createQueue(
+          'reminder',
+          configService.get<string>('REDIS_URL') || 'redis://localhost:6379',
+        ),
     },
   ],
   controllers: [NotificationController],
