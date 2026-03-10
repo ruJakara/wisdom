@@ -69,7 +69,7 @@ apt-get install docker-compose-plugin
 
 ```bash
 git clone <repository-url>
-cd night-hunger/docker
+cd night-hunger
 ```
 
 #### 3. Настройка окружения
@@ -89,14 +89,15 @@ DB_NAME=night_hunger
 #### 4. Запуск
 
 ```bash
-docker-compose -f docker-compose.prod.yml --env-file .env.production up -d
+docker-compose -f docker/docker-compose.prod.yml --env-file .env.production up -d --build
 ```
 
 #### 5. Проверка
 
 ```bash
-docker-compose -f docker-compose.prod.yml ps
-docker-compose -f docker-compose.prod.yml logs -f
+docker-compose -f docker/docker-compose.prod.yml ps
+docker-compose -f docker/docker-compose.prod.yml logs -f
+docker-compose -f docker/docker-compose.prod.yml logs -f bot
 ```
 
 ---
@@ -201,13 +202,16 @@ curl http://localhost:3000/api/health
 
 ```bash
 # API
-docker-compose logs -f api
+docker-compose -f docker/docker-compose.prod.yml logs -f api
 
 # Web
-docker-compose logs -f web
+docker-compose -f docker/docker-compose.prod.yml logs -f web
 
 # Worker
-docker-compose logs -f worker
+docker-compose -f docker/docker-compose.prod.yml logs -f worker
+
+# Bot
+docker-compose -f docker/docker-compose.prod.yml logs -f bot
 ```
 
 ### Метрики
@@ -223,13 +227,13 @@ docker-compose logs -f worker
 ### Создание бэкапа
 
 ```bash
-docker-compose exec postgres pg_dump -U postgres night_hunger > backup.sql
+docker-compose -f docker/docker-compose.prod.yml exec postgres pg_dump -U postgres night_hunger > backup.sql
 ```
 
 ### Восстановление
 
 ```bash
-docker-compose exec -T postgres psql -U postgres night_hunger < backup.sql
+docker-compose -f docker/docker-compose.prod.yml exec -T postgres psql -U postgres night_hunger < backup.sql
 ```
 
 ### Автоматизация (cron)
@@ -238,7 +242,7 @@ docker-compose exec -T postgres psql -U postgres night_hunger < backup.sql
 # /etc/cron.daily/backup-night-hunger
 #!/bin/bash
 DATE=$(date +%Y%m%d_%H%M%S)
-docker-compose exec -T postgres pg_dump -U postgres night_hunger > /backups/night_hunger_$DATE.sql
+docker-compose -f /opt/night-hunger/docker/docker-compose.prod.yml exec -T postgres pg_dump -U postgres night_hunger > /backups/night_hunger_$DATE.sql
 find /backups -name "night_hunger_*.sql" -mtime +7 -delete
 ```
 
@@ -250,10 +254,10 @@ find /backups -name "night_hunger_*.sql" -mtime +7 -delete
 
 ```bash
 # Проверка логов
-docker-compose logs api
+docker-compose -f docker/docker-compose.prod.yml logs api
 
 # Проверка подключения к БД
-docker-compose exec api ping postgres
+docker-compose -f docker/docker-compose.prod.yml exec api ping postgres
 ```
 
 ### Frontend не подключается к API
@@ -263,7 +267,7 @@ docker-compose exec api ping postgres
 ### Redis недоступен
 
 ```bash
-docker-compose exec redis redis-cli ping
+docker-compose -f docker/docker-compose.prod.yml exec redis redis-cli ping
 # Ответ: PONG
 ```
 

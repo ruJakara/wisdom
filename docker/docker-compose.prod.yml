@@ -3,7 +3,7 @@ version: '3.8'
 services:
   api:
     build:
-      context: ../../services/api
+      context: ../services/api
       dockerfile: ../../docker/api/Dockerfile
     environment:
       - NODE_ENV=production
@@ -20,7 +20,7 @@ services:
 
   web:
     build:
-      context: ../../apps/web
+      context: ../apps/web
       dockerfile: ../../docker/web/Dockerfile
     ports:
       - "80:80"
@@ -30,13 +30,26 @@ services:
 
   worker:
     build:
-      context: ../../services/worker
+      context: ../services/worker
       dockerfile: ../../docker/worker/Dockerfile
     environment:
       - NODE_ENV=production
       - REDIS_URL=${REDIS_URL}
     depends_on:
       - redis
+    restart: unless-stopped
+
+  bot:
+    build:
+      context: ../apps/bot
+      dockerfile: ../../docker/bot/Dockerfile
+    environment:
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - TELEGRAM_WEBAPP_URL=${TELEGRAM_WEBAPP_URL}
+      - WEB_APP_URL=${WEB_APP_URL}
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      - api
     restart: unless-stopped
 
   postgres:

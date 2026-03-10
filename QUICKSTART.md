@@ -2,6 +2,18 @@
 
 Актуальный quickstart для текущего состояния проекта:
 
+Production запуск (always-on бот через Docker):
+
+1. Убедиться, что в `.env` заданы:
+   - `TELEGRAM_BOT_TOKEN`
+   - `TELEGRAM_WEBAPP_URL`
+2. Запустить:
+   - `docker-compose -f docker/docker-compose.prod.yml up -d --build`
+3. Проверить бот:
+   - `docker-compose -f docker/docker-compose.prod.yml logs -f bot`
+
+Локальный fallback запуск:
+
 1. Скопировать `.env.example` в `.env`.
 2. Заполнить `TELEGRAM_BOT_TOKEN` и `TELEGRAM_WEBAPP_URL`.
 3. Запустить `run-bot-only.bat`.
@@ -24,5 +36,5 @@
 Для backend MVP (Stage 2):
 
 1. Проверить сборку: `npm run build --prefix services/api`.
-2. Активные модули в текущем контуре: `auth`, `user`, `game`.
+2. Активные модули в текущем контуре: `auth`, `user`, `game`, `upgrade`, `inventory`, `shop`.
 3. Базовый цикл (`auth -> hunt -> action -> state`) подтверждён локально на 2026-03-09.

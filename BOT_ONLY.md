@@ -1,6 +1,7 @@
 # Bot-Only Quick Start
 
 This mode runs only the Telegram bot and skips API, worker, database, and Docker services.
+Use this for local diagnostics/fallback. In production use Docker Compose (`docker/docker-compose.prod.yml`) so bot restarts automatically.
 
 ## Windows
 

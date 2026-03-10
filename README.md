@@ -14,11 +14,12 @@
   - `auth -> hunt -> action -> state`
   - `upgrade -> inventory -> shop` (JWT smoke)
 - Расширенные backend-модули (`leaderboard`, `referral`, `payment`, `notification`) временно отключены до следующей интеграции.
-- Рекомендованный запуск бота: `run-bot-only.bat`.
+- Локальный аварийный запуск бота: `run-bot-only.bat`.
+- Production запуск: `docker-compose -f docker/docker-compose.prod.yml up -d --build` (включает сервис `bot` с автоперезапуском).
 
 Подробный статус и диагностические команды: `STATUS.md`.
 
-## Быстрый запуск (единственный актуальный путь)
+## Быстрый локальный запуск (fallback)
 
 1. Скопируй `.env.example` в `.env`.
 2. Заполни минимум:
@@ -31,6 +32,14 @@ run-bot-only.bat
 ```
 
 4. В Telegram отправь `/start` и нажми `🎮 Играть`.
+
+## Production (Always-On Bot)
+
+```bash
+docker-compose -f docker/docker-compose.prod.yml up -d --build
+docker-compose -f docker/docker-compose.prod.yml ps
+docker-compose -f docker/docker-compose.prod.yml logs -f bot
+```
 
 ## Документация
 

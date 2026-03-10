@@ -69,3 +69,14 @@ TODO / next agent suggestions:
     - `output/web-game/stage4-upgrade/*`
     - `output/web-game/stage4-inventory/*`
     - `output/web-game/stage4-shop/*`
+- Bot production hardening (2026-03-10):
+  - Incident: users reported `/start` and buttons stopped responding; local code was fine but bot process was not guaranteed always-on.
+  - Added resilient polling restart loop in `apps/bot/src/main.py` (auto-restart after unexpected polling errors).
+  - Added restart loop to `run-bot-only.bat` for local fallback diagnostics.
+  - Added containerized bot runtime:
+    - new `docker/bot/Dockerfile`
+    - `bot` service in `docker/docker-compose.prod.yml` with `restart: unless-stopped`
+    - `bot` service in `docker/docker-compose.dev.yml`
+  - Fixed broken production compose build contexts in `docker/docker-compose.prod.yml` (`../../...` -> `../...`).
+  - Updated CI image build to include bot and corrected API/Web contexts in `.github/workflows/ci-cd.yml`.
+  - Updated docs (`README.md`, `QUICKSTART.md`, `STATUS.md`, `BOT_ONLY.md`, `docs/DEPLOYMENT.md`) to make Docker prod path primary and batch script fallback-only.

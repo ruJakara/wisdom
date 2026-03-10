@@ -83,6 +83,7 @@
 **Цель:** подключить расширенные модули после ядра.
 
 - [x] `upgrade` + `inventory` + `shop` (Stage 4 partial, live в backend/frontend, 2026-03-10).
+- [x] Перевести Telegram-бот в always-on инфраструктурный запуск (Docker Compose `prod`, сервис `bot`, автоперезапуск).
 - [ ] `leaderboard` + кэш.
 - [ ] `referral` (без ломки типов).
 - [ ] `payment` (убрать mock и сделать реальную интеграцию).

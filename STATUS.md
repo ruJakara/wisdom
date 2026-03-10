@@ -4,9 +4,9 @@
 
 ## Текущее состояние (Stage 4 partial: economy live)
 
-- Рабочая конфигурация: `bot-only` + восстановленные экраны WebApp (Stage 1) + Stage 4 partial (экономика в live).
-- Backend `services/api` (MVP core) собирается после стабилизации этапа 2.
-- Единый рекомендуемый путь локального запуска: `run-bot-only.bat`.
+- Рабочая конфигурация: Docker production stack с always-on ботом + Stage 4 partial (экономика в live).
+- Backend `services/api` собирается в recovery-контуре (core + economy partial).
+- Локальный fallback для бота: `run-bot-only.bat`.
 
 ## Что работает
 
@@ -23,10 +23,13 @@
   - extended (`leaderboard/referral`) -> mock (`VITE_USE_MOCK_EXTENDED_API=true`)
 - `services/api` собирается:
   - `npm run build --prefix services/api` -> OK (проверено 2026-03-10).
-- В backend оставлен минимальный контур модулей:
+- В backend активный recovery-контур модулей:
   - `auth`
   - `user`
   - `game`
+  - `upgrade`
+  - `inventory`
+  - `shop`
 - Проверен базовый runtime-цикл backend MVP:
   - `auth -> game/hunt -> game/action -> game/state` -> OK (проверено 2026-03-09, локальный smoke).
 - Подтверждён ручной smoke в Telegram WebApp:
@@ -43,6 +46,9 @@
   - `POST /api/shop/buy` -> OK
 - Проверка Stage 4 partial frontend:
   - Playwright smoke: `/#/upgrade`, `/#/inventory`, `/#/shop` -> без новых console errors (артефакты в `output/web-game/stage4-*`).
+- Production bot infra:
+  - `docker/docker-compose.prod.yml` содержит сервис `bot` с `restart: unless-stopped`.
+  - Добавлен `docker/bot/Dockerfile`.
 - Бот-код проходит синтаксическую проверку:
   - `python -m compileall apps\bot\src` -> OK (проверено 2026-03-09).
 
@@ -55,7 +61,9 @@
 
 ## Где смотреть логи
 
-- Бот runtime:
+- Бот runtime (production):
+  - `docker-compose -f docker/docker-compose.prod.yml logs -f bot`.
+- Бот runtime (local fallback):
   - окно терминала, в котором запущен `run-bot-only.bat`.
 - Временные файлы pip при запуске батника:
   - `apps/bot/.tmp`.
@@ -70,8 +78,9 @@
 2. Заполнить минимум:
    - `TELEGRAM_BOT_TOKEN`
    - `TELEGRAM_WEBAPP_URL`
-3. Запустить `run-bot-only.bat`.
-4. В Telegram открыть бота, отправить `/start`, нажать `🎮 Играть`.
+3. Для production: `docker-compose -f docker/docker-compose.prod.yml up -d --build`.
+4. Для локального fallback: `run-bot-only.bat`.
+5. В Telegram открыть бота, отправить `/start`, нажать `🎮 Играть`.
 
 ## Архив устаревших инструкций
 

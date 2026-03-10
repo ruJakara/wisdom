@@ -48,6 +48,19 @@ services:
       - ../services/worker:/app
       - /app/node_modules
 
+  bot:
+    build:
+      context: ../apps/bot
+      dockerfile: ../../docker/bot/Dockerfile
+    environment:
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - TELEGRAM_WEBAPP_URL=${TELEGRAM_WEBAPP_URL}
+      - WEB_APP_URL=${WEB_APP_URL}
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      - api
+    restart: unless-stopped
+
   postgres:
     image: postgres:15-alpine
     environment:
