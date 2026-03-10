@@ -66,4 +66,18 @@ if "%TELEGRAM_WEBAPP_URL%"=="" (
     echo TELEGRAM_WEBAPP_URL=%TELEGRAM_WEBAPP_URL%
 )
 echo.
+set "BOT_RESTART_DELAY=5"
+
+:BOT_LOOP
 %PYTHON_CMD% src\main.py
+set "BOT_EXIT_CODE=%ERRORLEVEL%"
+
+if "%BOT_EXIT_CODE%"=="0" (
+    echo [INFO] Bot stopped normally.
+    exit /b 0
+)
+
+echo [WARN] Bot process exited with code %BOT_EXIT_CODE%.
+echo [INFO] Restarting in %BOT_RESTART_DELAY% seconds...
+timeout /t %BOT_RESTART_DELAY% /nobreak >nul
+goto BOT_LOOP
