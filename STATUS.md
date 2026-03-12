@@ -41,6 +41,13 @@
   - нормализация `401`, network, timeout сообщений в API client/hooks.
 - Локальный web-game smoke:
   - Playwright (`/hunt`, `click: Начать охоту`) + `render_game_to_text` -> OK (проверено 2026-03-10, `output/web-game/state-0.json`).
+- Frontend patch 1.1 (2026-03-11/12) реализован без изменения backend-контрактов:
+  - Hub: отдельные кнопки `Прокачка`/`Способности`/`Инвентарь`, Social (`Лидеры`/`Рефералы` + `Скоро`).
+  - Upgrade: покупка карточек способностей за XP.
+  - Abilities: просмотр купленных/доступных способностей.
+  - Hunt 1.1: выбор локации (`Грот`), энка, Кристалл ночи, события, финальный выбор, голод, фамильяр.
+  - Визуал: портрет скина в Hub/бою.
+  - Smoke-артефакты: `output/web-game/patch11-smoke/*` и `patch11-smoke-summary.json` (все ключевые проверки=true).
 - Проверка Stage 4 economy backend (локальный JWT smoke, 2026-03-10):
   - `GET /api/upgrade/options` -> OK
   - `POST /api/upgrade/buy` -> OK

@@ -165,7 +165,7 @@ TODO / next agent suggestions:
   - Build checks:
     - `npm run build --prefix services/api` -> OK.
     - `npm run build --prefix apps/web` -> OK.
-  - API smoke (local, 2026-03-10):
+- API smoke (local, 2026-03-10):
     - `GET /api/leaderboard?limit=5&offset=0&filter=xp` -> OK.
     - `GET /api/leaderboard/me` -> OK.
     - `GET /api/referral/code` -> OK.
@@ -179,5 +179,41 @@ TODO / next agent suggestions:
       - `output/web-game/stage4-leaderboard/*`
       - `output/web-game/stage4-referral/*`
       - `output/web-game/stage4-leaderboard-click/*`
-      - `output/web-game/stage4-referral-click/*`
+    - `output/web-game/stage4-referral-click/*`
     - no `output/web-game/errors-0.json` generated.
+- Patch 1.1 implementation (2026-03-11/12):
+  - Added isolated frontend patch-state for Hunt 1.1 (`apps/web/src/store/patch11Store.ts`) to avoid backend contract changes:
+    - enka resource + 4h cooldown flow
+    - Night Crystal (+40 enka when enka=0) prompt logic
+    - grot event flow (battle/chest/victim/empty)
+    - combat/final-choice flow
+    - hunger effects and escape lock on low hunger
+    - familiar logic (persistent + summoned bats)
+    - ability ownership + XP spending ledger (`spentXp`) and patron familiar selection.
+  - Added patch data/portraits:
+    - `apps/web/src/features/patch11/data.ts`
+    - `apps/web/src/features/patch11/portraits.ts`
+  - Updated app routing and automation state export:
+    - new route `/abilities`
+    - `render_game_to_text` now includes patch11 state snapshot.
+  - Reworked Hub for patch UX:
+    - explicit buttons: `Прокачка`, `Способности`, `Инвентарь`
+    - Social section: `Лидеры`, `Рефералы`, plus `Скоро` placeholders
+    - donor familiar (passive) selection in Hub only.
+  - Reworked Upgrade to ability-card purchase by XP and added Abilities read-only overview screen.
+  - Reworked Hunt screen into event-driven flow with location select and new combat layout:
+    - enemy card + enemy stats + log + battle actions
+    - no `Поглотить` button in main combat
+    - final-choice actions: `Добить` / `Выпить досуха` / `Гипноз`
+    - player block includes hunger and skin portrait
+    - familiar section above player block when present.
+  - Inventory updated with hunt-session potion from grot chest.
+  - Build validation:
+    - `npm run build --prefix apps/web` -> OK.
+  - Smoke validation (Playwright):
+    - artifacts in `output/web-game/patch11-smoke/*`
+    - summary in `output/web-game/patch11-smoke/patch11-smoke-summary.json`
+    - all target checks true in latest run:
+      - hub_open, hunt_open, grot_selected, enka_spent, combat_seen, final_choice_seen,
+      - hunger_logic_checked, familiar_logic_checked, return_to_hub_after_zero_enka,
+      - crystal_prompt_seen, player_portrait_seen, core_screens_opened.

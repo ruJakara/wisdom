@@ -1,5 +1,6 @@
 import { memo, useMemo } from 'react';
 import { ProgressBar } from './ProgressBar';
+import { getSkinPortrait } from '../../features/patch11/portraits';
 
 interface PlayerCardProps {
   username: string | null;
@@ -8,6 +9,7 @@ interface PlayerCardProps {
   maxHp: number;
   xp: number;
   bloodBalance: number;
+  skinId?: string | null;
 }
 
 export const PlayerCard = memo(function PlayerCard({
@@ -17,25 +19,27 @@ export const PlayerCard = memo(function PlayerCard({
   maxHp,
   xp,
   bloodBalance,
+  skinId,
 }: PlayerCardProps) {
   // Мемоизация вычислений
   const xpForNextLevel = useMemo(
     () => 100 * Math.pow(level, 1.5),
     [level]
   );
+  const portrait = getSkinPortrait(skinId);
 
   return (
     <div className="bg-gray-800 rounded-xl p-4 w-full max-w-sm">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 bg-red-600 rounded-full flex items-center justify-center text-xl font-bold">
-            {level}
+          <div className="w-12 h-12 bg-red-600 rounded-full flex items-center justify-center text-2xl" title={portrait.name}>
+            {portrait.portrait}
           </div>
           <div>
             <h3 className="text-white font-semibold">
               {username || 'Игрок'}
             </h3>
-            <p className="text-gray-400 text-sm">Уровень {level}</p>
+            <p className="text-gray-400 text-sm">Уровень {level} • {portrait.name}</p>
           </div>
         </div>
         <div className="text-right">

@@ -3,6 +3,7 @@ import { useUserStore } from '../../store';
 import { inventoryApi, InventoryItem } from '../../api';
 import { getApiErrorMessage } from '../../api/error';
 import { useProfile } from '../../hooks';
+import { usePatch11Store } from '../../store/patch11Store';
 import './Inventory.css';
 
 interface ItemCardProps {
@@ -71,6 +72,10 @@ function Inventory() {
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
   const [filter, setFilter] = useState<string>('all');
   const { refetch: refetchProfile } = useProfile();
+  const { droppedPotions, useHuntPotion } = usePatch11Store((state) => ({
+    droppedPotions: state.droppedPotions,
+    useHuntPotion: state.useHuntPotion,
+  }));
 
   const { bloodBalance } = useUserStore((state) => ({
     bloodBalance: state.profile?.bloodBalance || 0,
@@ -158,6 +163,33 @@ function Inventory() {
             {type === 'all' ? 'Все' : itemTypeConfig[type]?.label || type}
           </button>
         ))}
+      </div>
+
+      <div className="inventory-item item-red">
+        <div className="item-icon">🧿</div>
+        <div className="item-info">
+          <h4 className="item-name">Зелье из Грота</h4>
+          <div className="item-meta">
+            <span className="item-type type-red">Событие Hunt 1.1</span>
+            <span className="item-quantity">x{droppedPotions}</span>
+          </div>
+          <div className="item-effect">Восстанавливает 35 HP</div>
+        </div>
+        <div className="item-actions">
+          <button
+            className="action-btn use-btn"
+            disabled={isLoading || droppedPotions <= 0}
+            onClick={() => {
+              const result = useHuntPotion();
+              setMessage({
+                text: result.message,
+                type: result.ok ? 'success' : 'error',
+              });
+            }}
+          >
+            Использовать
+          </button>
+        </div>
       </div>
 
       {filteredInventory.length === 0 ? (
