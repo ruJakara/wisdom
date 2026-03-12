@@ -89,6 +89,9 @@ function Hunt() {
   const combatSnapshot = getCombatPlayerSnapshot(fallbackStats);
   const skin = getSkinPortrait(profile?.skinId);
   const cooldownLeft = getCooldownRemainingMs();
+  const isCombatStage = stage === 'combat' || stage === 'final_choice';
+  const hasCombatFamiliar = !!combatFamiliar;
+  const actionPanelBottom = hasCombatFamiliar ? 'bottom-[18.5rem]' : 'bottom-[11.5rem]';
 
   useEffect(() => {
     enterHunt();
@@ -144,7 +147,7 @@ function Hunt() {
   }
 
   return (
-    <div className="mx-auto flex min-h-screen w-full max-w-xl flex-col gap-3 bg-slate-950 p-4 pb-24 text-slate-100">
+    <div className={`mx-auto flex min-h-screen w-full max-w-xl flex-col gap-3 bg-slate-950 p-4 text-slate-100 ${isCombatStage ? 'pb-72' : 'pb-24'}`}>
       <header className="rounded-xl border border-slate-800 bg-slate-900 p-3">
         <h1 className="text-xl font-bold text-red-400">🩸 Hunt 1.1</h1>
         <p className="text-xs text-slate-400">Охота = поиск события. Локация патча: Грот.</p>
@@ -274,7 +277,7 @@ function Hunt() {
 
           <section className="rounded-xl border border-slate-800 bg-slate-900 p-3">
             <h3 className="mb-2 text-sm font-semibold text-slate-200">📜 Лог события</h3>
-            <div className="max-h-36 space-y-1 overflow-y-auto text-xs text-slate-300">
+            <div className="max-h-28 space-y-1 overflow-y-auto text-xs text-slate-300">
               {combatLog.slice(-12).map((entry, index) => (
                 <p key={`${entry}-${index}`}>{entry}</p>
               ))}
@@ -282,7 +285,7 @@ function Hunt() {
           </section>
 
           {stage === 'combat' && (
-            <section className="rounded-xl border border-slate-800 bg-slate-900 p-3">
+            <section className={`sticky ${actionPanelBottom} z-30 rounded-xl border border-slate-700 bg-slate-900/95 p-3 shadow-xl backdrop-blur`}>
               <h3 className="mb-2 text-sm font-semibold text-slate-200">Действия боя</h3>
               <div className="grid grid-cols-3 gap-2">
                 <button
@@ -318,7 +321,7 @@ function Hunt() {
           )}
 
           {stage === 'final_choice' && (
-            <section className="rounded-xl border border-purple-500/40 bg-purple-900/20 p-3">
+            <section className={`sticky ${actionPanelBottom} z-30 rounded-xl border border-purple-500/40 bg-purple-900/95 p-3 shadow-xl backdrop-blur`}>
               <h3 className="mb-2 text-sm font-semibold text-purple-300">🩸 Финальный выбор</h3>
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
                 <button
@@ -350,7 +353,7 @@ function Hunt() {
           )}
 
           {combatFamiliar && (
-            <section className="rounded-xl border border-emerald-600/40 bg-emerald-900/20 p-3 text-sm">
+            <section className="sticky bottom-[11.5rem] z-20 rounded-xl border border-emerald-600/40 bg-emerald-900/90 p-3 text-sm backdrop-blur">
               <h3 className="mb-2 font-semibold text-emerald-300">Фамильяр в бою</h3>
               <div className="flex items-center justify-between rounded-lg bg-slate-950 p-2">
                 <span>{combatFamiliar.portrait} {combatFamiliar.name}</span>
@@ -359,7 +362,7 @@ function Hunt() {
             </section>
           )}
 
-          <section className="rounded-xl border border-slate-800 bg-slate-900 p-3 text-sm">
+          <section className="sticky bottom-20 z-10 rounded-xl border border-slate-700 bg-slate-900/95 p-3 text-sm shadow-xl backdrop-blur">
             <h3 className="mb-2 font-semibold text-slate-200">Игрок</h3>
             <div className="mb-2 flex items-center gap-3 rounded-lg bg-slate-950 p-2">
               <span className="text-2xl">{skin.portrait}</span>

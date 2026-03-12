@@ -48,6 +48,13 @@
   - Hunt 1.1: выбор локации (`Грот`), энка, Кристалл ночи, события, финальный выбор, голод, фамильяр.
   - Визуал: портрет скина в Hub/бою.
   - Smoke-артефакты: `output/web-game/patch11-smoke/*` и `patch11-smoke-summary.json` (все ключевые проверки=true).
+- Patch 1.1 finish pass (2026-03-12):
+  - Закрыт UX-gap боевого экрана на узком/низком viewport:
+    - критичные блоки (`Действия`, `Фамильяр`, `Игрок HP/атака/защита/голод`) закреплены и не уходят за первый экран.
+  - Отдельно проверено отсутствие регрессий маршрутов recovery baseline (`Hub/Hunt/Upgrade/Abilities/Inventory/Leaderboard/Referral`).
+  - Расширенный smoke с 18 обязательными сценариями:
+    - `output/web-game/patch11-finish-pass/summary.json`
+    - все проверки = `true`.
 - Проверка Stage 4 economy backend (локальный JWT smoke, 2026-03-10):
   - `GET /api/upgrade/options` -> OK
   - `POST /api/upgrade/buy` -> OK

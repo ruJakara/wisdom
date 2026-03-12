@@ -215,5 +215,21 @@ TODO / next agent suggestions:
     - summary in `output/web-game/patch11-smoke/patch11-smoke-summary.json`
     - all target checks true in latest run:
       - hub_open, hunt_open, grot_selected, enka_spent, combat_seen, final_choice_seen,
-      - hunger_logic_checked, familiar_logic_checked, return_to_hub_after_zero_enka,
+    - hunger_logic_checked, familiar_logic_checked, return_to_hub_after_zero_enka,
       - crystal_prompt_seen, player_portrait_seen, core_screens_opened.
+- Patch 1.1 finish pass (2026-03-12):
+  - Performed audit vs patch 1.1 spec and found primary practical gap in battle UI readability on low-height viewport:
+    - player HP block could drift below first visible area in combat/final-choice states.
+  - Applied minimal safe UI/debug fix in `apps/web/src/screens/Hunt/Hunt.tsx`:
+    - introduced layered sticky combat panels (`actions` -> `familiar` -> `player`) preserving required order;
+    - increased combat bottom padding and compressed log viewport height to keep critical controls/stats visible.
+  - Regression discovered during fix: action buttons could be hidden by sticky player panel.
+    - debug pass corrected z-index/bottom offsets and sticky order so both actions and player HP are visible together.
+  - Validation:
+    - `npm run build --prefix apps/web` -> OK (post-finish pass).
+    - Full patch 1.1 smoke rerun with 18 required scenarios + critical HP visibility:
+      - summary: `output/web-game/patch11-finish-pass/summary.json`
+      - all checks true including:
+        - `player_hp_visible_in_critical_combat=true`
+        - `portrait_hub_and_battle=true`
+        - `no_core_regression_routes=true`.
